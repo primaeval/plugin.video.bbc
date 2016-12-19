@@ -103,8 +103,8 @@ def live():
 
     return items
 
-@plugin.route('/play_episode/<url>/<name>/<thumbnail>/<autoplay>')
-def play_episode(url,name,thumbnail,autoplay):
+@plugin.route('/play_episode/<url>/<name>/<thumbnail>/<action>')
+def play_episode(url,name,thumbnail,action):
     headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
     r = requests.get(url,headers=headers)
 
@@ -164,7 +164,7 @@ def play_episode(url,name,thumbnail,autoplay):
             if int(plugin.get_setting('supplier'))==1:
                 URL.append([(eval(resolution)),url])
     log(sorted(URL,reverse=True))
-    if autoplay == "True" or autoplay == True:
+    if action == "autoplay":
         URL=max(URL)[1]
         log(URL)
         item =  {
@@ -173,7 +173,7 @@ def play_episode(url,name,thumbnail,autoplay):
             'thumbnail': thumbnail
         }
         return plugin.play_video(item)
-    else:
+    elif action == "list":
         items = []
         for u in sorted(URL, reverse=True):
             items.append({
@@ -183,6 +183,8 @@ def play_episode(url,name,thumbnail,autoplay):
                 'is_playable': True
             })
         return items
+    elif action == "download":
+        pass
 
 
 @plugin.route('/episodes/<url>')
@@ -275,14 +277,18 @@ def page(url):
 
         if plugin.get_setting('autoplay') == 'true':
             autoplay = True
+            action = "autoplay"
         else:
             autoplay = False
+            action = "list"
         context_items = []
         if episode_url:
             name = unescape(name)
-            url = plugin.url_for('play_episode',url=episode_url,name=name,thumbnail=iconimage,autoplay=autoplay)
+            url = plugin.url_for('play_episode',url=episode_url,name=name,thumbnail=iconimage,action=action)
             context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add Favourite', 'XBMC.RunPlugin(%s)' %
             (plugin.url_for(add_favourite, name=name, url=episode_url, thumbnail=iconimage, is_episode=True))))
+            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Download', 'XBMC.RunPlugin(%s)' %
+            (plugin.url_for('play_episode',url=episode_url,name=name,thumbnail=iconimage,action="download"))))
             items.append({
                 'label': name,
                 'path': url,
@@ -310,6 +316,12 @@ def add_favourite(name,url,thumbnail,is_episode):
     favourites = plugin.get_storage('favourites')
     favourites[name] = '|'.join((url,thumbnail,is_episode))
     log((name,favourites[name]))
+    
+@plugin.route('/remove_favourite/<name>')
+def remove_favourite(name):
+    favourites = plugin.get_storage('favourites')
+    del favourites[name]
+    xbmc.executebuiltin('Container.Refresh')
 
 @plugin.route('/new_search')
 def new_search():
@@ -351,25 +363,32 @@ def favourites():
     items = []
     if plugin.get_setting('autoplay') == 'true':
         autoplay = True
+        action = "autoplay"
     else:
         autoplay = False
+        action = "list"
     for name in sorted(favourites):
         fav = favourites[name]
         log(fav)
         url,iconimage,is_episode = fav.split('|')
+        context_items = []
+        context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Remove Favourite', 'XBMC.RunPlugin(%s)' %
+        (plugin.url_for(remove_favourite, name=name))))
         if is_episode == "True":
             items.append({
                 'label': unescape(name),
-                'path': plugin.url_for('play_episode',url=url,name=name,thumbnail=iconimage,autoplay=autoplay),
+                'path': plugin.url_for('play_episode',url=url,name=name,thumbnail=iconimage,action=action),
                 'thumbnail':iconimage,#.replace('336x189','832x468'),
-                'is_playable' : autoplay
+                'is_playable' : autoplay,
+                'context_menu': context_items,
             })
         else:
             items.append({
                 'label': "[B]%s[/B]" % unescape(name),
                 'path': plugin.url_for('page',url=url),
                 'thumbnail':iconimage,#.replace('336x189','832x468'),
-                'is_playable' : False
+                'is_playable' : False,
+                'context_menu': context_items,
             })
     return items
 
