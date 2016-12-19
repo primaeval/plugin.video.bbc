@@ -236,8 +236,8 @@ def page(url):
     html = r.content
 
     items = []
-    html=html.split('data-ip-id="')
-    for p in html:
+    html_items=html.split('data-ip-id="')
+    for p in html_items:
 
         IPID=p.split('"')[0]
         urls=re.compile('href="(.+?)"').findall (p)
@@ -287,7 +287,7 @@ def page(url):
             items.append({
                 'label': name,
                 'path': url,
-                'thumbnail':iconimage, 
+                'thumbnail':iconimage,
                 'is_playable' : autoplay,
                 'context_menu': context_items,
             })
@@ -300,9 +300,18 @@ def page(url):
             items.append({
                 'label': "[B]%s[/B]" % name,
                 'path': url,
-                'thumbnail':iconimage, 
+                'thumbnail':iconimage,
                 'context_menu': context_items,
             })
+    next_page = re.compile('href="([^"]*?&amp;page=[0-9]*)"> Next').search (html)
+    if next_page:
+        url = 'http://www.bbc.co.uk%s' % unescape(next_page.group(1))
+        url = plugin.url_for('page',url=url)
+        items.append({
+            'label': "[COLOR orange]Next Page >>[/COLOR]",
+            'path': url,
+            'thumbnail':get_icon_path("item_next"),
+        })
     return items
 
 @plugin.route('/add_favourite/<name>/<url>/<thumbnail>/<is_episode>')
@@ -385,6 +394,28 @@ def favourites():
     return items
 
 
+@plugin.route('/categories')
+def categories():
+    url = 'http://www.bbc.co.uk/iplayer'
+    headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
+    r = requests.get(url,headers=headers)
+    if r.status_code != requests.codes.ok:
+        return
+    html = r.content
+    match = re.compile(
+        '<a href="/iplayer/categories/(.+?)" class="stat">(.+?)</a>'
+        ).findall(html)
+    items = []
+    for url, name in match:
+        url = 'http://www.bbc.co.uk/iplayer/categories/%s/all?sort=atoz' % url
+        items.append({
+            'label': "[B]%s[/B]" % unescape(name),
+            'path': plugin.url_for('page',url=url),
+            'thumbnail':get_icon_path('lists'),
+        })
+    return items
+
+
 @plugin.route('/')
 def index():
     items = [
@@ -409,10 +440,17 @@ def index():
         'thumbnail':get_icon_path('lists'),
     },
     {
+        'label': 'Categories',
+        'path': plugin.url_for('categories'),
+        'thumbnail':get_icon_path('top'),
+    },
+    {
         'label': 'Favourites',
         'path': plugin.url_for('favourites'),
         'thumbnail':get_icon_path('top'),
     },
+
+
     ]
     return items
 
