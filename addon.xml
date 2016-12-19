@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <addon id="plugin.video.bbc"
 version="0.0.1"
-name="BBC"
+name="BBC TV"
 provider-name="primaeval">
 <requires>
   <import addon="xbmc.python" version="2.20.0"/>
@@ -12,9 +12,9 @@ provider-name="primaeval">
   <provides>video</provides>
 </extension>
 <extension point="xbmc.addon.metadata">
-  <summary lang="en">BBC</summary>
+  <summary lang="en">BBC TV</summary>
   <description lang="en"></description>
-  <disclaimer lang="en">.</disclaimer>
+  <disclaimer lang="en">This is not a product of or endorsed by the BBC.</disclaimer>
 </extension>
 </addon>
 

@@ -182,8 +182,36 @@ def play_episode(url,name,thumbnail,action):
                 'is_playable': True
             })
         return items
-    elif action == "download":
-        pass
+    elif action == "cache":
+        URL=max(URL)[1]
+        r = requests.get(URL,headers=headers)
+        if r.status_code != requests.codes.ok:
+            return
+        html = r.content
+        lines = html.splitlines()
+        URL = lines[-1] #MAYBE
+        if not URL.startswith('http'):
+            return
+        r = requests.get(URL,headers=headers)
+        if r.status_code != requests.codes.ok:
+            return
+        html = r.content
+        lines = html.splitlines()
+        f = xbmcvfs.File('%s%s.ts' % (plugin.get_setting('cache'), re.sub('[\\/:]','',name)),'wb')
+        chunks = [x for x in lines if x.startswith('http')]
+        d = xbmcgui.DialogProgressBG()
+        d.create('BBC','%s' % name)
+        total = len(chunks)
+        count = 0
+        for chunk in chunks:
+            data = requests.get(chunk,headers=headers).content
+            f.write(data)
+            percent = int(100.0 * count / total)
+            d.update(percent, "BBC", "%s" % name)
+            count = count + 1
+        f.close()
+        d.close()
+
 
 
 @plugin.route('/alphabet')
@@ -282,8 +310,8 @@ def page(url):
             url = plugin.url_for('play_episode',url=episode_url,name=name,thumbnail=iconimage,action=action)
             context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add Favourite', 'XBMC.RunPlugin(%s)' %
             (plugin.url_for(add_favourite, name=name, url=episode_url, thumbnail=iconimage, is_episode=True))))
-            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Download', 'XBMC.RunPlugin(%s)' %
-            (plugin.url_for('play_episode',url=episode_url,name=name,thumbnail=iconimage,action="download"))))
+            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Cache', 'XBMC.RunPlugin(%s)' %
+            (plugin.url_for('play_episode',url=episode_url,name=name,thumbnail=iconimage,action="cache"))))
             items.append({
                 'label': name,
                 'path': url,

@@ -4,5 +4,6 @@
 <setting id="autoplay" type="bool" label="Autoplay" default="false"/>
 <setting label="Catchup Source" type="enum" default="0" id="catchup" values="HLS|RTMP"/>
 <setting label="Supplier" type="enum" default="0" id="supplier" values="AKAMAI|LIMELIGHT"/>
+<setting id="cache" label="Cache" type="folder" option="writeable" default="special://temp" />
 </category>
 </settings>
