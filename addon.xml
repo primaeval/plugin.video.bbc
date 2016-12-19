@@ -14,7 +14,7 @@ provider-name="primaeval">
 <extension point="xbmc.addon.metadata">
   <summary lang="en">BBC TV</summary>
   <description lang="en"></description>
-  <disclaimer lang="en">This is not a product of or endorsed by the BBC.</disclaimer>
+  <disclaimer lang="en">You need a UK TV License to use this addon legally. This is not a product of or endorsed by the BBC.</disclaimer>
 </extension>
 </addon>
 
