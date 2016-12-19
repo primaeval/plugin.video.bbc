@@ -22,6 +22,22 @@ def remove_formatting(label):
     label = re.sub(r"\[/?COLOR.*?\]",'',label)
     return label
 
+def escape( str ):
+    str = str.replace("'","&#39;")
+    str = str.replace("&", "&amp;")
+    str = str.replace("<", "&lt;")
+    str = str.replace(">", "&gt;")
+    str = str.replace("\"", "&quot;")
+    return str
+
+def unescape( str ):
+    str = str.replace("&lt;","<")
+    str = str.replace("&gt;",">")
+    str = str.replace("&quot;","\"")
+    str = str.replace("&amp;","&")
+    str = str.replace("&#39;","'")
+    return str
+
 @plugin.route('/live')
 def live():
     hd = [
@@ -87,8 +103,8 @@ def live():
 
     return items
 
-@plugin.route('/play_episode/<url>/<name>/<thumbnail>')
-def play_episode(url,name,thumbnail):
+@plugin.route('/play_episode/<url>/<name>/<thumbnail>/<autoplay>')
+def play_episode(url,name,thumbnail,autoplay):
     headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
     r = requests.get(url,headers=headers)
 
@@ -107,8 +123,8 @@ def play_episode(url,name,thumbnail):
         r = requests.get(NEW_URL,headers=headers)
         if r.status_code != requests.codes.ok:
             return
-        html = r.content  
-    
+        html = r.content
+
         match=re.compile('application="(.+?)".+?String="(.+?)".+?identifier="(.+?)".+?protocol="(.+?)".+?server="(.+?)".+?supplier="(.+?)"').findall(html.replace('amp;',''))
         for app,auth , playpath ,protocol ,server,supplier in match:
 
@@ -135,7 +151,7 @@ def play_episode(url,name,thumbnail):
         r = requests.get(NEW_URL,headers=headers)
         if r.status_code != requests.codes.ok:
             return
-        html = r.content  
+        html = r.content
 
         hls = re.compile('bitrate="(.+?)".+?connection href="(.+?)".+?transferFormat="(.+?)"/>').findall(html)
         for resolution, url, supplier in hls:
@@ -147,25 +163,77 @@ def play_episode(url,name,thumbnail):
 
             if int(plugin.get_setting('supplier'))==1:
                 URL.append([(eval(resolution)),url])
-
-    URL=max(URL)[1]
-    item =  {
-        'label': name,
-        'path': URL,
-        'thumbnail': thumbnail
-    }
-    return plugin.play_video(item)
+    log(sorted(URL,reverse=True))
+    if autoplay == "True" or autoplay == True:
+        URL=max(URL)[1]
+        log(URL)
+        item =  {
+            'label': name,
+            'path': URL,
+            'thumbnail': thumbnail
+        }
+        return plugin.play_video(item)
+    else:
+        items = []
+        for u in sorted(URL, reverse=True):
+            items.append({
+                'label': "%s [%d]" % (name, u[0]),
+                'path': u[1],
+                'thumbnail': thumbnail,
+                'is_playable': True
+            })
+        return items
 
 
 @plugin.route('/episodes/<url>')
 def episodes(url):
     log(url)
 
+@plugin.route('/alphabet')
+def alphabet():
+    items = []
+    for letter in char_range('A', 'Z'):
+        items.append({
+            'label': letter,
+            'path': plugin.url_for('letter',letter=letter.lower()),
+            'thumbnail':get_icon_path('lists'),
+        })
+    items.append({
+        'label': "0-9",
+        'path': plugin.url_for('letter',letter="0-9"),
+        'thumbnail':get_icon_path('lists'),
+    })
+
+    return items
+
+def char_range(c1, c2):
+    for c in xrange(ord(c1), ord(c2)+1):
+        yield chr(c)
+
+@plugin.route('/letter/<letter>')
+def letter(letter):
+    url = 'http://www.bbc.co.uk/iplayer/a-z/%s' % letter
+    headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
+    r = requests.get(url,headers=headers)
+    if r.status_code != requests.codes.ok:
+        return
+    html = r.content
+
+    items = []
+    match=re.compile('<a href="/iplayer/brand/(.+?)".+?<span class="title">(.+?)</span>',re.DOTALL).findall (html)
+    for url , name in match:
+        url = "http://www.bbc.co.uk/iplayer/episodes/%s" % url
+        items.append({
+            'label': unescape(name),
+            'path': plugin.url_for('page',url=url),
+            'thumbnail':get_icon_path('lists'),
+        })
+    return items
+
 @plugin.route('/page/<url>')
 def page(url):
     headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
     r = requests.get(url,headers=headers)
-
     if r.status_code != requests.codes.ok:
         return
     html = r.content
@@ -199,26 +267,49 @@ def page(url):
             match=re.compile('srcset="(.+?)"').findall (p)
             if match:
                 iconimage = match[0]
-
+        log(iconimage)
         plot = ''
         match=re.compile('<p class="synopsis">(.+?)</p>').findall (p)
         if match:
             plot = match[0]
 
+        if plugin.get_setting('autoplay') == 'true':
+            autoplay = True
+        else:
+            autoplay = False
+        context_items = []
         if episode_url:
+            name = unescape(name)
+            url = plugin.url_for('play_episode',url=episode_url,name=name,thumbnail=iconimage,autoplay=autoplay)
+            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add Favourite', 'XBMC.RunPlugin(%s)' %
+            (plugin.url_for(add_favourite, name=name, url=episode_url, thumbnail=iconimage, is_episode=True))))
             items.append({
                 'label': name,
-                'path': plugin.url_for('play_episode',url=episode_url,name=name,thumbnail=iconimage),
-                'thumbnail':iconimage,#.replace('336x189','832x468'),
-                'is_playable' : True
+                'path': url,
+                'thumbnail':iconimage, #.replace('336x189','832x468'),
+                'is_playable' : autoplay,
+                'context_menu': context_items,
             })
+        context_items = []
         if episodes_url:
+            name = unescape(group)
+            url = plugin.url_for('page',url=episodes_url)
+            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add Favourite', 'XBMC.RunPlugin(%s)' %
+            (plugin.url_for(add_favourite, name=name, url=episodes_url, thumbnail=iconimage, is_episode=False))))
             items.append({
-                'label': "[B]%s[/B]" % group,
-                'path': plugin.url_for('page',url=episodes_url),
-                'thumbnail':iconimage#.replace('336x189','832x468'),
+                'label': "[B]%s[/B]" % name,
+                'path': url,
+                'thumbnail':iconimage, #.replace('336x189','832x468'),
+                'context_menu': context_items,
             })
     return items
+
+@plugin.route('/add_favourite/<name>/<url>/<thumbnail>/<is_episode>')
+def add_favourite(name,url,thumbnail,is_episode):
+    log((name,url,thumbnail,is_episode))
+    favourites = plugin.get_storage('favourites')
+    favourites[name] = '|'.join((url,thumbnail,is_episode))
+    log((name,favourites[name]))
 
 @plugin.route('/new_search')
 def new_search():
@@ -254,6 +345,35 @@ def searches():
         })
     return items
 
+@plugin.route('/favourites')
+def favourites():
+    favourites = plugin.get_storage('favourites')
+    items = []
+    if plugin.get_setting('autoplay') == 'true':
+        autoplay = True
+    else:
+        autoplay = False
+    for name in sorted(favourites):
+        fav = favourites[name]
+        log(fav)
+        url,iconimage,is_episode = fav.split('|')
+        if is_episode == "True":
+            items.append({
+                'label': unescape(name),
+                'path': plugin.url_for('play_episode',url=url,name=name,thumbnail=iconimage,autoplay=autoplay),
+                'thumbnail':iconimage,#.replace('336x189','832x468'),
+                'is_playable' : autoplay
+            })
+        else:
+            items.append({
+                'label': "[B]%s[/B]" % unescape(name),
+                'path': plugin.url_for('page',url=url),
+                'thumbnail':iconimage,#.replace('336x189','832x468'),
+                'is_playable' : False
+            })
+    return items
+
+
 @plugin.route('/')
 def index():
     items = [
@@ -263,9 +383,24 @@ def index():
         'thumbnail':get_icon_path('tv'),
     },
     {
+        'label': 'Most Popular',
+        'path': plugin.url_for('page',url='http://www.bbc.co.uk/iplayer/group/most-popular'),
+        'thumbnail':get_icon_path('top'),
+    },
+    {
         'label': 'Search',
         'path': plugin.url_for('searches'),
         'thumbnail':get_icon_path('search'),
+    },
+    {
+        'label': 'A-Z',
+        'path': plugin.url_for('alphabet'),
+        'thumbnail':get_icon_path('lists'),
+    },
+    {
+        'label': 'Favourites',
+        'path': plugin.url_for('favourites'),
+        'thumbnail':get_icon_path('top'),
     },
     ]
     return items
