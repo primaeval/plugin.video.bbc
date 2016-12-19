@@ -470,12 +470,12 @@ def index():
     {
         'label': 'Categories',
         'path': plugin.url_for('categories'),
-        'thumbnail':get_icon_path('top'),
+        'thumbnail':get_icon_path('lists'),
     },
     {
         'label': 'Favourites',
         'path': plugin.url_for('favourites'),
-        'thumbnail':get_icon_path('top'),
+        'thumbnail':get_icon_path('favourites'),
     },
 
 
