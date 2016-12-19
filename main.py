@@ -163,10 +163,9 @@ def play_episode(url,name,thumbnail,action):
 
             if int(plugin.get_setting('supplier'))==1:
                 URL.append([(eval(resolution)),url])
-    log(sorted(URL,reverse=True))
+
     if action == "autoplay":
         URL=max(URL)[1]
-        log(URL)
         item =  {
             'label': name,
             'path': URL,
@@ -186,10 +185,6 @@ def play_episode(url,name,thumbnail,action):
     elif action == "download":
         pass
 
-
-@plugin.route('/episodes/<url>')
-def episodes(url):
-    log(url)
 
 @plugin.route('/alphabet')
 def alphabet():
@@ -269,7 +264,7 @@ def page(url):
             match=re.compile('srcset="(.+?)"').findall (p)
             if match:
                 iconimage = match[0]
-        log(iconimage)
+
         plot = ''
         match=re.compile('<p class="synopsis">(.+?)</p>').findall (p)
         if match:
@@ -292,7 +287,7 @@ def page(url):
             items.append({
                 'label': name,
                 'path': url,
-                'thumbnail':iconimage, #.replace('336x189','832x468'),
+                'thumbnail':iconimage, 
                 'is_playable' : autoplay,
                 'context_menu': context_items,
             })
@@ -305,18 +300,16 @@ def page(url):
             items.append({
                 'label': "[B]%s[/B]" % name,
                 'path': url,
-                'thumbnail':iconimage, #.replace('336x189','832x468'),
+                'thumbnail':iconimage, 
                 'context_menu': context_items,
             })
     return items
 
 @plugin.route('/add_favourite/<name>/<url>/<thumbnail>/<is_episode>')
 def add_favourite(name,url,thumbnail,is_episode):
-    log((name,url,thumbnail,is_episode))
     favourites = plugin.get_storage('favourites')
     favourites[name] = '|'.join((url,thumbnail,is_episode))
-    log((name,favourites[name]))
-    
+
 @plugin.route('/remove_favourite/<name>')
 def remove_favourite(name):
     favourites = plugin.get_storage('favourites')
@@ -369,7 +362,6 @@ def favourites():
         action = "list"
     for name in sorted(favourites):
         fav = favourites[name]
-        log(fav)
         url,iconimage,is_episode = fav.split('|')
         context_items = []
         context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Remove Favourite', 'XBMC.RunPlugin(%s)' %
@@ -378,7 +370,7 @@ def favourites():
             items.append({
                 'label': unescape(name),
                 'path': plugin.url_for('play_episode',url=url,name=name,thumbnail=iconimage,action=action),
-                'thumbnail':iconimage,#.replace('336x189','832x468'),
+                'thumbnail':iconimage,
                 'is_playable' : autoplay,
                 'context_menu': context_items,
             })
@@ -386,7 +378,7 @@ def favourites():
             items.append({
                 'label': "[B]%s[/B]" % unescape(name),
                 'path': plugin.url_for('page',url=url),
-                'thumbnail':iconimage,#.replace('336x189','832x468'),
+                'thumbnail':iconimage,
                 'is_playable' : False,
                 'context_menu': context_items,
             })
