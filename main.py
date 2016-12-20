@@ -6,6 +6,7 @@ import xbmc,xbmcaddon,xbmcvfs,xbmcgui,xbmcplugin
 import re
 import requests,urllib
 import os,sys
+import xml.etree.ElementTree as ET
 
 plugin = Plugin()
 big_list_view = False
@@ -37,6 +38,129 @@ def unescape( str ):
     str = str.replace("&amp;","&")
     str = str.replace("&#39;","'")
     return str
+
+@plugin.route('/schedule/<url>/<name>')
+def schedule(url,name):
+    data = requests.get(url).content
+    schedule = ET.fromstring(data)
+    days = schedule.findall("day")
+    items = []
+    if plugin.get_setting('autoplay') == 'true':
+        autoplay = True
+        action = "autoplay"
+    else:
+        autoplay = False
+        action = "list"
+    for day in days:
+        first = True
+        broadcasts = day[0]
+        for broadcast in broadcasts:
+            pid = broadcast.find("pid").text
+            start = broadcast.find("start").text
+            if first:
+                date = start[0:10]
+                first = False
+                items.append({
+                    'label' : "[COLOR yellow][B]%s[/B][/COLOR]" % date,
+                    'thumbnail' : get_icon_path("calendar"),
+                    'path' : '',
+                    'is_playable' : False,
+                })
+            end = broadcast.find("end").text
+            programme = broadcast.find("programme")
+            is_available = programme.find("is_available_mediaset_pc_sd").text
+            pid = programme.find("pid").text
+            display_titles = programme.find("display_titles")
+            image = programme.find("image")
+            image_pid = image.find("pid").text
+            title = display_titles.find("title").text
+            subtitle = display_titles.find("subtitle").text
+            if subtitle == None:
+                subtitle = ""
+            NAME = "[COLOR dimgray]%s-%s[/COLOR] %s %s" % (start[11:16],end[11:16],title,subtitle)
+            episode_url = 'http://www.bbc.co.uk/iplayer/episode/%s' % pid
+            thumbnail = 'https://ichef.bbci.co.uk/images/ic/336x189/%s.jpg' % image_pid
+            play_name = "%s %s" % (title,subtitle)
+            if is_available == "1":
+                URL = plugin.url_for('play_episode',url=episode_url,name=play_name,thumbnail=thumbnail,action=action)
+                NAME = "[COLOR orange]%s[/COLOR]" % NAME
+            else:
+                URL = plugin.url_for('schedule',url=url, name=name)
+            items.append({
+                'label' : NAME,
+                'thumbnail' : thumbnail,
+                'path' : URL,
+                'is_playable' : autoplay
+            })
+
+    return items
+
+@plugin.route('/schedule_period/<url>/<name>/<thumbnail>')
+def schedule_period(url,name,thumbnail):
+    items = []
+    for period in ["today","tomorrow","yesterday","this_week","next_week","last_week"]:
+        icon = 'special://home/addons/plugin.video.bbc/resources/img/%s.png' % id
+        URL = url.replace('today',period)
+        items.append({
+            'label' : "%s - %s" % (name,period.replace('_',' ').title()),
+            'thumbnail' : icon,
+            'path' : plugin.url_for('schedule',url=URL, name=name),
+            'is_playable' : False
+        })
+    return items
+
+@plugin.route('/schedules')
+def schedules():
+    channels = [
+        ('bbc_one_hd', "BBC One", "http://www.bbc.co.uk/bbcone/programmes/schedules/hd/today.xml"),
+        ('bbc_two_hd', "BBC Two", "http://www.bbc.co.uk/bbctwo/programmes/schedules/hd/today.xml"),
+        ('bbc_four_hd', "BBC Four", "http://www.bbc.co.uk/bbcfour/programmes/schedules/today.xml"),
+        ('bbc_news24', "BBC News", "http://www.bbc.co.uk/bbcnews/programmes/schedules/today.xml"),
+        ('bbc_parliament', "BBC Parliament", "http://www.bbc.co.uk/bbcparliament/programmes/schedules/today.xml"),
+        ('cbbc_hd', "CBBC", "http://www.bbc.co.uk/cbbc/programmes/schedules/today.xml"),
+        ('cbeebies_hd', "CBeebies", "http://www.bbc.co.uk/cbeebies/programmes/schedules/today.xml"),
+        ('bbc_alba', "Alba", "http://www.bbc.co.uk/bbcalba/programmes/schedules/today.xml"),
+        ('s4cpbs', "S4C", "http://www.bbc.co.uk/s4c/programmes/schedules/today.xml"),
+        ('bbc_one_hd', "BBC One Cambridgeshire", "http://www.bbc.co.uk/bbcone/programmes/schedules/cambridge/today.xml"),
+        ('bbc_one_hd', "BBC One Channel Islands", "http://www.bbc.co.uk/bbcone/programmes/schedules/channel_islands/today.xml"),
+        ('bbc_one_hd', "BBC One East", "http://www.bbc.co.uk/bbcone/programmes/schedules/east/today.xml"),
+        ('bbc_one_hd', "BBC One East Midlands", "http://www.bbc.co.uk/bbcone/programmes/schedules/east_midlands/today.xml"),
+        ('bbc_one_hd', "BBC One Yorks & Lincs", "http://www.bbc.co.uk/bbcone/programmes/schedules/east_yorkshire/today.xml"),
+        ('bbc_one_hd', "BBC One HD", "http://www.bbc.co.uk/bbcone/programmes/schedules/hd/today.xml"),
+        ('bbc_one_hd', "BBC One London", "http://www.bbc.co.uk/bbcone/programmes/schedules/london/today.xml"),
+        ('bbc_one_hd', "BBC One Northern Ireland", "http://www.bbc.co.uk/bbcone/programmes/schedules/ni/today.xml"),
+        ('bbc_one_hd', "BBC One Northern Ireland HD", "http://www.bbc.co.uk/bbcone/programmes/schedules/ni_hd/today.xml"),
+        ('bbc_one_hd', "BBC One North East & Cumbria", "http://www.bbc.co.uk/bbcone/programmes/schedules/north_east/today.xml"),
+        ('bbc_one_hd', "BBC One North West", "http://www.bbc.co.uk/bbcone/programmes/schedules/north_west/today.xml"),
+        ('bbc_one_hd', "BBC One Oxfordshire", "http://www.bbc.co.uk/bbcone/programmes/schedules/oxford/today.xml"),
+        ('bbc_one_hd', "BBC One Scotland", "http://www.bbc.co.uk/bbcone/programmes/schedules/scotland/today.xml"),
+        ('bbc_one_hd', "BBC One Scotland HD", "http://www.bbc.co.uk/bbcone/programmes/schedules/scotland_hd/today.xml"),
+        ('bbc_one_hd', "BBC One South", "http://www.bbc.co.uk/bbcone/programmes/schedules/south/today.xml"),
+        ('bbc_one_hd', "BBC One South East", "http://www.bbc.co.uk/bbcone/programmes/schedules/south_east/today.xml"),
+        ('bbc_one_hd', "BBC One South West", "http://www.bbc.co.uk/bbcone/programmes/schedules/south_west/today.xml"),
+        ('bbc_one_hd', "BBC One Wales", "http://www.bbc.co.uk/bbcone/programmes/schedules/wales/today.xml"),
+        ('bbc_one_hd', "BBC One Wales HD", "http://www.bbc.co.uk/bbcone/programmes/schedules/wales_hd/today.xml"),
+        ('bbc_one_hd', "BBC One West", "http://www.bbc.co.uk/bbcone/programmes/schedules/west/today.xml"),
+        ('bbc_one_hd', "BBC One West Midlands", "http://www.bbc.co.uk/bbcone/programmes/schedules/west_midlands/today.xml"),
+        ('bbc_one_hd', "BBC One Yorkshire", "http://www.bbc.co.uk/bbcone/programmes/schedules/yorkshire/today.xml"),
+        ('bbc_two_hd', "BBC Two Wales", "http://www.bbc.co.uk/bbctwo/programmes/schedules/wales/today.xml"),
+        ('bbc_two_hd', "BBC Two Scotland", "http://www.bbc.co.uk/bbctwo/programmes/schedules/scotland/today.xml"),
+        ('bbc_two_hd', "BBC Two England", "http://www.bbc.co.uk/bbctwo/programmes/schedules/england/today.xml"),
+        ('bbc_two_hd', "BBC Two Northern Ireland", "http://www.bbc.co.uk/bbctwo/programmes/schedules/ni/today.xml"),
+    ]
+    items = []
+    for id, name, url in channels:
+        icon = 'special://home/addons/plugin.video.bbc/resources/img/%s.png' % id
+        items.append({
+            'label' : name,
+            'thumbnail' : icon,
+            'path' : plugin.url_for('schedule_period',url=url, name=name, thumbnail=icon),
+            'is_playable' : False
+        })
+
+    return items
+
+
 
 @plugin.route('/live')
 def live():
@@ -128,7 +252,6 @@ def live_list(url,name,thumbnail):
     items = []
     match=re.compile('#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=(.+?),CODECS="(.+?)",RESOLUTION=(.+?)\n(.+?)$',flags=(re.DOTALL | re.MULTILINE)).findall(html)
     for bandwidth,codec,resolution,url in sorted(match, key=lambda x: int(x[0]), reverse=True):
-        log((bandwidth,codec,resolution,url))
         label = "%s [%s bps] %s" % (name,bandwidth,resolution)
         items.append({
             'label' : label,
@@ -500,6 +623,11 @@ def index():
     {
         'label': 'Live',
         'path': plugin.url_for('live'),
+        'thumbnail':get_icon_path('tv'),
+    },
+    {
+        'label': 'Schedules',
+        'path': plugin.url_for('schedules'),
         'thumbnail':get_icon_path('tv'),
     },
     {
