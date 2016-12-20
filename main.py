@@ -83,24 +83,59 @@ def live():
     for id, name  in hd :
         url='http://a.files.bbci.co.uk/media/live/manifesto/audio_video/simulcast/hls/uk/%s/%s/%s.m3u8' % (device, provider, id)
         icon = 'special://home/addons/plugin.video.bbc/resources/img/%s.png' % id
-        items.append({
-            'label' : name,
-            'thumbnail' : icon,
-            'path' : url,
-            'is_playable' : True
-        })
-
+        if plugin.get_setting('autoplay') == 'true':
+            items.append({
+                'label' : name,
+                'thumbnail' : icon,
+                'path' : url,
+                'is_playable' : True
+            })
+        else:
+            items.append({
+                'label' : name,
+                'thumbnail' : icon,
+                'path' : plugin.url_for('live_list',url=url, name=name, thumbnail=icon),
+                'is_playable' : False
+            })
     device = 'hls_mobile_wifi'
     for id, name  in sd :
         url='http://a.files.bbci.co.uk/media/live/manifesto/audio_video/simulcast/hls/uk/%s/%s/%s.m3u8' % (device, provider, id)
         icon = 'special://home/addons/plugin.video.bbc/resources/img/%s.png' % id
+        if plugin.get_setting('autoplay') == 'true':
+            items.append({
+                'label' : name,
+                'thumbnail' : icon,
+                'path' : url,
+                'is_playable' : True
+            })
+        else:
+            items.append({
+                'label' : name,
+                'thumbnail' : icon,
+                'path' : plugin.url_for('live_list',url=url, name=name, thumbnail=icon),
+                'is_playable' : False
+            })
+
+    return items
+
+@plugin.route('/live_list/<url>/<name>/<thumbnail>')
+def live_list(url,name,thumbnail):
+    headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
+    r = requests.get(url,headers=headers)
+    if r.status_code != requests.codes.ok:
+        return
+    html = r.content
+    items = []
+    match=re.compile('#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=(.+?),CODECS="(.+?)",RESOLUTION=(.+?)\n(.+?)$',flags=(re.DOTALL | re.MULTILINE)).findall(html)
+    for bandwidth,codec,resolution,url in sorted(match, key=lambda x: int(x[0]), reverse=True):
+        log((bandwidth,codec,resolution,url))
+        label = "%s [%s bps] %s" % (name,bandwidth,resolution)
         items.append({
-            'label' : name,
-            'thumbnail' : icon,
+            'label' : label,
+            'thumbnail' : thumbnail,
             'path' : url,
             'is_playable' : True
         })
-
     return items
 
 @plugin.route('/play_episode/<url>/<name>/<thumbnail>/<action>')
@@ -176,7 +211,7 @@ def play_episode(url,name,thumbnail,action):
         items = []
         for u in sorted(URL, reverse=True):
             items.append({
-                'label': "%s [%d]" % (name, u[0]),
+                'label': "%s [%d kbps]" % (name, u[0]),
                 'path': u[1],
                 'thumbnail': thumbnail,
                 'is_playable': True
@@ -353,6 +388,12 @@ def remove_favourite(name):
     del favourites[name]
     xbmc.executebuiltin('Container.Refresh')
 
+@plugin.route('/remove_search/<name>')
+def remove_search(name):
+    searches = plugin.get_storage('searches')
+    del searches[name]
+    xbmc.executebuiltin('Container.Refresh')
+
 @plugin.route('/new_search')
 def new_search():
     d = xbmcgui.Dialog()
@@ -374,16 +415,21 @@ def search(what):
 def searches():
     searches = plugin.get_storage('searches')
     items = []
+
     items.append({
         'label': 'New Search',
         'path': plugin.url_for('new_search'),
         'thumbnail':get_icon_path('search'),
     })
-    for s in sorted(searches):
+    for search in sorted(searches):
+        context_items = []
+        context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Remove Search', 'XBMC.RunPlugin(%s)' %
+        (plugin.url_for(remove_search, name=search))))
         items.append({
-            'label': s,
-            'path': plugin.url_for('search',what=s),
+            'label': search,
+            'path': plugin.url_for('search',what=search),
             'thumbnail':get_icon_path('search'),
+            'context_menu': context_items,
         })
     return items
 
@@ -434,8 +480,12 @@ def categories():
         '<a href="/iplayer/categories/(.+?)" class="stat">(.+?)</a>'
         ).findall(html)
     items = []
+    if plugin.get_setting('categories') == '0':
+        order = "atoz"
+    else:
+        order = "dateavailable"
     for url, name in match:
-        url = 'http://www.bbc.co.uk/iplayer/categories/%s/all?sort=atoz' % url
+        url = 'http://www.bbc.co.uk/iplayer/categories/%s/all?sort=%s' % (url,order)
         items.append({
             'label': "[B]%s[/B]" % unescape(name),
             'path': plugin.url_for('page',url=url),
