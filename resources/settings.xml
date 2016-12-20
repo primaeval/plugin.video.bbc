@@ -2,10 +2,14 @@
 <category label="Display">
 <setting id="view_mode" label="View Mode" type="number" default="" />
 <setting label="Categories Order" type="enum" default="0" id="categories" values="A-Z|Date"/>
-<setting type="sep" />
+</category>
+<category label="Streams">
 <setting id="autoplay" type="bool" label="Autoplay" default="false"/>
 <setting label="Catchup Source" type="enum" default="0" id="catchup" values="HLS|RTMP"/>
 <setting label="Supplier" type="enum" default="0" id="supplier" values="AKAMAI|LIMELIGHT"/>
+<setting id="mpd" type="bool" label="Live MPD Menu (Krypton+ only)" default="false"/>
+</category>
+<category label="Cache">
 <setting id="cache" label="Cache" type="folder" option="writeable" default="special://temp" />
 </category>
 </settings>
