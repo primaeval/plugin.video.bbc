@@ -39,9 +39,17 @@ def unescape( str ):
     str = str.replace("&#39;","'")
     return str
 
+def get(url):
+    headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
+    r = requests.get(url,headers=headers)
+    if r.status_code != requests.codes.ok:
+        return
+    html = r.content
+    return html
+
 @plugin.route('/schedule/<url>/<name>')
 def schedule(url,name):
-    data = requests.get(url).content
+    data = get(url)
     schedule = ET.fromstring(data)
     days = schedule.findall("day")
     items = []
@@ -244,11 +252,7 @@ def live():
 
 @plugin.route('/live_list/<url>/<name>/<thumbnail>')
 def live_list(url,name,thumbnail):
-    headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
-    r = requests.get(url,headers=headers)
-    if r.status_code != requests.codes.ok:
-        return
-    html = r.content
+    html = get(url)
     items = []
     match=re.compile('#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=(.+?),CODECS="(.+?)",RESOLUTION=(.+?)\n(.+?)$',flags=(re.DOTALL | re.MULTILINE)).findall(html)
     for bandwidth,codec,resolution,url in sorted(match, key=lambda x: int(x[0]), reverse=True):
@@ -263,29 +267,17 @@ def live_list(url,name,thumbnail):
 
 @plugin.route('/play_episode/<url>/<name>/<thumbnail>/<action>')
 def play_episode(url,name,thumbnail,action):
-    headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
-    r = requests.get(url,headers=headers)
-
-    if r.status_code != requests.codes.ok:
-        return
-    html = r.content
+    html = get(url)
     vpid=re.compile('"vpid":"(.+?)"').findall(html)[0]
-
     if not vpid:
         return
 
     URL=[]
     if int(plugin.get_setting('catchup'))==1:
         NEW_URL= "http://open.live.bbc.co.uk/mediaselector/5/select/version/2.0/mediaset/stb-all-h264/vpid/%s" % vpid
-
-        r = requests.get(NEW_URL,headers=headers)
-        if r.status_code != requests.codes.ok:
-            return
-        html = r.content
-
+        html = get(NEW_URL)
         match=re.compile('application="(.+?)".+?String="(.+?)".+?identifier="(.+?)".+?protocol="(.+?)".+?server="(.+?)".+?supplier="(.+?)"').findall(html.replace('amp;',''))
         for app,auth , playpath ,protocol ,server,supplier in match:
-
             port = '1935'
             if protocol == 'rtmpt': port = 80
             if int(plugin.get_setting('supplier'))==1:
@@ -294,32 +286,22 @@ def play_episode(url,name,thumbnail,action):
                     res=playpath.split('secure_auth/')[1]
                     resolution=res.split('kbps')[0]
                     URL.append([(eval(resolution)),url])
-
-
-            if int(plugin.get_setting('supplier'))==0:
+            elif int(plugin.get_setting('supplier'))==0:
                 url="%s://%s:%s/%s?%s playpath=%s?%s" % (protocol,server,port,app,auth,playpath,auth)
                 if supplier == 'akamai':
                     res=playpath.split('secure/')[1]
                     resolution=res.split('kbps')[0]
                     URL.append([(eval(resolution)),url])
-
     else:
         NEW_URL= "http://open.live.bbc.co.uk/mediaselector/5/select/version/2.0/mediaset/iptv-all/vpid/%s" % vpid
-
-        r = requests.get(NEW_URL,headers=headers)
-        if r.status_code != requests.codes.ok:
-            return
-        html = r.content
-
+        html = get(NEW_URL)
         hls = re.compile('bitrate="(.+?)".+?connection href="(.+?)".+?transferFormat="(.+?)"/>').findall(html)
         for resolution, url, supplier in hls:
             server=url.split('//')[1]
             server=server.split('/')[0]
-
             if int(plugin.get_setting('supplier'))==0:
                 URL.append([(eval(resolution)),url])
-
-            if int(plugin.get_setting('supplier'))==1:
+            elif int(plugin.get_setting('supplier'))==1:
                 URL.append([(eval(resolution)),url])
 
     if action == "autoplay":
@@ -342,18 +324,12 @@ def play_episode(url,name,thumbnail,action):
         return items
     elif action == "cache":
         URL=max(URL)[1]
-        r = requests.get(URL,headers=headers)
-        if r.status_code != requests.codes.ok:
-            return
-        html = r.content
+        html = get(URL)
         lines = html.splitlines()
         URL = lines[-1] #MAYBE
         if not URL.startswith('http'):
             return
-        r = requests.get(URL,headers=headers)
-        if r.status_code != requests.codes.ok:
-            return
-        html = r.content
+        html = get(URL)
         lines = html.splitlines()
         f = xbmcvfs.File('%s%s.ts' % (plugin.get_setting('cache'), re.sub('[\\/:]','',name)),'wb')
         chunks = [x for x in lines if x.startswith('http')]
@@ -362,7 +338,7 @@ def play_episode(url,name,thumbnail,action):
         total = len(chunks)
         count = 0
         for chunk in chunks:
-            data = requests.get(chunk,headers=headers).content
+            data = get(chunk)
             f.write(data)
             percent = int(100.0 * count / total)
             d.update(percent, "BBC", "%s" % name)
@@ -396,11 +372,7 @@ def char_range(c1, c2):
 @plugin.route('/letter/<letter>')
 def letter(letter):
     url = 'http://www.bbc.co.uk/iplayer/a-z/%s' % letter
-    headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
-    r = requests.get(url,headers=headers)
-    if r.status_code != requests.codes.ok:
-        return
-    html = r.content
+    html = get(url)
 
     items = []
     match=re.compile('<a href="/iplayer/brand/(.+?)".+?<span class="title">(.+?)</span>',re.DOTALL).findall (html)
@@ -416,10 +388,7 @@ def letter(letter):
 @plugin.route('/page/<url>')
 def page(url):
     headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
-    r = requests.get(url,headers=headers)
-    if r.status_code != requests.codes.ok:
-        return
-    html = r.content
+    html = get(url)
 
     items = []
     html_items=html.split('data-ip-id="')
@@ -595,10 +564,7 @@ def favourites():
 def categories():
     url = 'http://www.bbc.co.uk/iplayer'
     headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
-    r = requests.get(url,headers=headers)
-    if r.status_code != requests.codes.ok:
-        return
-    html = r.content
+    html = get(url)
     match = re.compile(
         '<a href="/iplayer/categories/(.+?)" class="stat">(.+?)</a>'
         ).findall(html)
