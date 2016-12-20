@@ -94,11 +94,15 @@ def schedule(url,name):
                 NAME = "[COLOR orange]%s[/COLOR]" % NAME
             else:
                 URL = plugin.url_for('schedule',url=url, name=name)
+            context_items = []
+            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Cache', 'XBMC.RunPlugin(%s)' %
+            (plugin.url_for('play_episode',url=episode_url,name=play_name,thumbnail=thumbnail,action="cache"))))
             items.append({
                 'label' : NAME,
                 'thumbnail' : thumbnail,
                 'path' : URL,
-                'is_playable' : autoplay
+                'is_playable' : autoplay,
+                'context_menu': context_items,
             })
 
     return items
@@ -267,6 +271,7 @@ def live_list(url,name,thumbnail):
 
 @plugin.route('/play_episode/<url>/<name>/<thumbnail>/<action>')
 def play_episode(url,name,thumbnail,action):
+    log((url,name,thumbnail,action))
     html = get(url)
     vpid=re.compile('"vpid":"(.+?)"').findall(html)[0]
     if not vpid:
