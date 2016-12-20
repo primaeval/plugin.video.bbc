@@ -271,7 +271,6 @@ def live_list(url,name,thumbnail):
 
 @plugin.route('/play_episode/<url>/<name>/<thumbnail>/<action>')
 def play_episode(url,name,thumbnail,action):
-    log((url,name,thumbnail,action))
     html = get(url)
     vpid=re.compile('"vpid":"(.+?)"').findall(html)[0]
     if not vpid:
@@ -300,14 +299,23 @@ def play_episode(url,name,thumbnail,action):
     else:
         NEW_URL= "http://open.live.bbc.co.uk/mediaselector/5/select/version/2.0/mediaset/iptv-all/vpid/%s" % vpid
         html = get(NEW_URL)
-        hls = re.compile('bitrate="(.+?)".+?connection href="(.+?)".+?transferFormat="(.+?)"/>').findall(html)
-        for resolution, url, supplier in hls:
-            server=url.split('//')[1]
-            server=server.split('/')[0]
-            if int(plugin.get_setting('supplier'))==0:
-                URL.append([(eval(resolution)),url])
-            elif int(plugin.get_setting('supplier'))==1:
-                URL.append([(eval(resolution)),url])
+        html = html.replace('>','>\n')
+        lines = html.splitlines()
+        for line in lines:
+            match = re.compile('media bitrate="(.+?)"').search(line)
+            if match:
+                bitrate = match.group(1)
+            match = re.compile('.*?href="(.+?)".*?protocol="(.+?)" supplier="(.+?)" transferFormat="(.+?)"/>').search(line)
+            if match:
+                url = match.group(1)
+                protocol = match.group(2)
+                supplier = match.group(3)
+                transferFormat = match.group(4)
+                if transferFormat == "hls":
+                    if plugin.get_setting('supplier') == '0' and 'akamai' in supplier.lower():
+                        URL.append([int(bitrate),url])
+                    elif plugin.get_setting('supplier') == '1' and 'limelight' in supplier.lower():
+                        URL.append([int(bitrate),url])
 
     if action == "autoplay":
         URL=max(URL)[1]
@@ -332,6 +340,7 @@ def play_episode(url,name,thumbnail,action):
         html = get(URL)
         lines = html.splitlines()
         URL = lines[-1] #MAYBE
+        log(("cache url",URL))
         if not URL.startswith('http'):
             return
         html = get(URL)
@@ -392,6 +401,8 @@ def letter(letter):
 
 @plugin.route('/page/<url>')
 def page(url):
+    global big_list_view
+    big_list_view = True
     headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
     html = get(url)
 
@@ -532,6 +543,8 @@ def searches():
 
 @plugin.route('/favourites')
 def favourites():
+    global big_list_view
+    big_list_view = True
     favourites = plugin.get_storage('favourites')
     items = []
     if plugin.get_setting('autoplay') == 'true':
