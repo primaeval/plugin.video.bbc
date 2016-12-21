@@ -85,6 +85,8 @@ def schedule(url,name):
             subtitle = display_titles.find("subtitle").text
             if subtitle == None:
                 subtitle = ""
+            else:
+                subtitle = "- %s" % subtitle
             NAME = "[COLOR dimgray]%s-%s[/COLOR] %s %s" % (start[11:16],end[11:16],title,subtitle)
             episode_url = 'http://www.bbc.co.uk/iplayer/episode/%s' % pid
             thumbnail = 'https://ichef.bbci.co.uk/images/ic/336x189/%s.jpg' % image_pid
@@ -337,28 +339,47 @@ def play_episode(url,name,thumbnail,action):
         return items
     elif action == "cache":
         URL=max(URL)[1]
+        BASE = re.compile('/[^/]*?$').sub('/',URL)
         html = get(URL)
+
+        if "variants" in html:
+            lines = html.splitlines()
+            last = lines[-1]
+            URL = BASE + last
+            html = get(URL)
+
         lines = html.splitlines()
-        URL = lines[-1] #MAYBE
-        log(("cache url",URL))
         if not URL.startswith('http'):
             return
         html = get(URL)
         lines = html.splitlines()
         f = xbmcvfs.File('%s%s.ts' % (plugin.get_setting('cache'), re.sub('[\\/:]','',name)),'wb')
-        chunks = [x for x in lines if x.startswith('http')]
-        d = xbmcgui.DialogProgressBG()
-        d.create('BBC','%s' % name)
-        total = len(chunks)
-        count = 0
+        chunks = [x for x in lines if not x.startswith('#')]
+        if plugin.get_setting('cache.progress') == 'true':
+            progress = True
+        else:
+            progress = False
+        if progress:
+            d = xbmcgui.DialogProgressBG()
+            d.create('BBC','%s' % name)
+            total = len(chunks)
+            count = 0
+        else:
+            xbmcgui.Dialog().notification("BBC Cache Started",name)
         for chunk in chunks:
+            if not chunk.startswith('http'):
+                chunk = BASE+chunk
             data = get(chunk)
             f.write(data)
-            percent = int(100.0 * count / total)
-            d.update(percent, "BBC", "%s" % name)
-            count = count + 1
+            if progress:
+                percent = int(100.0 * count / total)
+                d.update(percent, "BBC", "%s" % name)
+                count = count + 1
         f.close()
-        d.close()
+        if progress:
+            d.close()
+        else:
+            xbmcgui.Dialog().notification("BBC Cache Finished",name)
 
 
 
