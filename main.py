@@ -97,6 +97,8 @@ def schedule(url,name):
             else:
                 URL = plugin.url_for('schedule',url=url, name=name)
             context_items = []
+            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add Favourite', 'XBMC.RunPlugin(%s)' %
+            (plugin.url_for(add_favourite, name=play_name, url=episode_url, thumbnail=thumbnail, is_episode=True))))
             context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Cache', 'XBMC.RunPlugin(%s)' %
             (plugin.url_for('play_episode',url=episode_url,name=play_name,thumbnail=thumbnail,action="cache"))))
             items.append({
@@ -581,6 +583,8 @@ def favourites():
         context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Remove Favourite', 'XBMC.RunPlugin(%s)' %
         (plugin.url_for(remove_favourite, name=name))))
         if is_episode == "True":
+            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Cache', 'XBMC.RunPlugin(%s)' %
+            (plugin.url_for('play_episode',url=url,name=name,thumbnail=iconimage,action="cache"))))
             items.append({
                 'label': unescape(name),
                 'path': plugin.url_for('play_episode',url=url,name=name,thumbnail=iconimage,action=action),
