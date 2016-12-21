@@ -1,6 +1,6 @@
 <settings>
 <category label="Display">
-<setting id="view_mode" label="View Mode" type="number" default="" />
+<setting id="view_mode" label="View Mode" type="number" default="50" />
 <setting label="Categories Order" type="enum" default="0" id="categories" values="A-Z|Date"/>
 </category>
 <category label="Streams">
