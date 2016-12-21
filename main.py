@@ -281,9 +281,13 @@ def play_episode(url,name,thumbnail,action):
         return
 
     URL=[]
+    subtitles = ''
     if int(plugin.get_setting('catchup'))==1:
         NEW_URL= "http://open.live.bbc.co.uk/mediaselector/5/select/version/2.0/mediaset/stb-all-h264/vpid/%s" % vpid
         html = get(NEW_URL)
+        match = re.compile('href="([^"]*?subtitles[^"]*?)"').search(html)
+        if match:
+            subtitles = match.group(1)
         match=re.compile('application="(.+?)".+?String="(.+?)".+?identifier="(.+?)".+?protocol="(.+?)".+?server="(.+?)".+?supplier="(.+?)"').findall(html.replace('amp;',''))
         for app,auth , playpath ,protocol ,server,supplier in match:
             port = '1935'
@@ -303,6 +307,9 @@ def play_episode(url,name,thumbnail,action):
     else:
         NEW_URL= "http://open.live.bbc.co.uk/mediaselector/5/select/version/2.0/mediaset/iptv-all/vpid/%s" % vpid
         html = get(NEW_URL)
+        match = re.compile('href="([^"]*?subtitles[^"]*?)"').search(html)
+        if match:
+            subtitles = match.group(1)
         html = html.replace('>','>\n')
         lines = html.splitlines()
         for line in lines:
@@ -321,6 +328,37 @@ def play_episode(url,name,thumbnail,action):
                     elif plugin.get_setting('supplier') == '1' and 'limelight' in supplier.lower():
                         URL.append([int(bitrate),url])
 
+    if subtitles:
+        data = get(subtitles)
+        lines = data.splitlines()
+        i = 0
+        f = xbmcvfs.File('special://profile/addon_data/plugin.video.bbc/subtitles.srt','wb')
+        for line in lines:
+            if line.strip().startswith('<p '):
+                i = i + 1
+                match = re.compile('begin="([^"]*?)"').search(line)
+                if match:
+                    begin = match.group(1)
+                    begin = begin.replace('.',',')
+                    if len(begin.split(',')[-1]) == 2:
+                        begin = begin + '0'
+                match = re.compile('end="([^"]*?)"').search(line)
+                if match:
+                    end = match.group(1)
+                    end = end.replace('.',',')
+                    if len(end.split(',')[-1]) == 2:
+                        end = end + '0'
+                match = re.compile('>(.*)<').search(line)
+                if match:
+                    text = match.group(1).strip()
+                    text = text.replace('<br />','\n')
+                    text = text.replace('  ','\n')
+                    text = re.compile('<[^>]*>').sub('',text)
+                f.write(str(i)+'\n')
+                f.write("%s --> %s\n" % (begin,end))
+                f.write(text+'\n\n')
+        f.close()
+
     if action == "autoplay":
         URL=max(URL)[1]
         item =  {
@@ -328,7 +366,8 @@ def play_episode(url,name,thumbnail,action):
             'path': URL,
             'thumbnail': thumbnail
         }
-        return plugin.play_video(item)
+        plugin.set_resolved_url(item,'special://profile/addon_data/plugin.video.bbc/subtitles.srt')
+
     elif action == "list":
         items = []
         for u in sorted(URL, reverse=True):
@@ -355,7 +394,9 @@ def play_episode(url,name,thumbnail,action):
             return
         html = get(URL)
         lines = html.splitlines()
-        f = xbmcvfs.File('%s%s.ts' % (plugin.get_setting('cache'), re.sub('[\\/:]','',name)),'wb')
+        basename = '%s%s' % (plugin.get_setting('cache'), re.sub('[\\/:]','',name))
+        xbmcvfs.copy('special://profile/addon_data/plugin.video.bbc/subtitles.srt',"%s.srt" % basename)
+        f = xbmcvfs.File("%s.ts" % basename,'wb')
         chunks = [x for x in lines if not x.startswith('#')]
         if plugin.get_setting('cache.progress') == 'true':
             progress = True
