@@ -176,7 +176,32 @@ def schedules():
 
     return items
 
-
+@plugin.route('/red_button')
+def red_button():
+    items = []
+    device = 'abr_hdtv'
+    provider = 'ak'
+    for suffix in ['','b']:
+        for i in range(1,25):
+            id = "sport_stream_%02d%s" % (i,suffix)
+            name = "Red Button %02d%s" % (i,suffix)
+            url='http://a.files.bbci.co.uk/media/live/manifesto/audio_video/webcast/hls/uk/%s/%s/%s.m3u8' % (device, provider, id)
+            icon = 'special://home/addons/plugin.video.bbc/resources/img/red_button.png'
+            if plugin.get_setting('autoplay') == 'true':
+                items.append({
+                    'label' : name,
+                    'thumbnail' : icon,
+                    'path' : url,
+                    'is_playable' : True
+                })
+            else:
+                items.append({
+                    'label' : name,
+                    'thumbnail' : icon,
+                    'path' : plugin.url_for('live_list',url=url, name=name, thumbnail=icon),
+                    'is_playable' : False
+                })
+    return items
 
 @plugin.route('/live')
 def live():
@@ -718,6 +743,11 @@ def index():
         'label': 'Live',
         'path': plugin.url_for('live'),
         'thumbnail':get_icon_path('tv'),
+    },
+    {
+        'label': 'Red Button',
+        'path': plugin.url_for('red_button'),
+        'thumbnail':get_icon_path('red_button'),
     },
     {
         'label': 'Schedules',
