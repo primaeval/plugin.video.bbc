@@ -391,7 +391,10 @@ def play_episode(url,name,thumbnail,action):
             'path': URL,
             'thumbnail': thumbnail
         }
-        plugin.set_resolved_url(item,'special://profile/addon_data/plugin.video.bbc/subtitles.srt')
+        if subtitles:
+            plugin.set_resolved_url(item,'special://profile/addon_data/plugin.video.bbc/subtitles.srt')
+        else:
+            plugin.set_resolved_url(item)
 
     elif action == "list":
         items = []
