@@ -498,7 +498,6 @@ def page(url):
     items = []
     html_items=html.split('data-ip-id="')
     for p in html_items:
-
         IPID=p.split('"')[0]
         urls=re.compile('href="(.+?)"').findall (p)
 
@@ -510,7 +509,13 @@ def page(url):
             elif u.startswith('/iplayer/episodes/'):
                 episodes_url = 'http://www.bbc.co.uk%s' % u
 
-        name=re.compile('title="(.+?)"').findall (p)[0]
+        name = re.compile('title="(.+?)"').findall (p)[0]
+
+        episode = None
+        match = re.compile('Episode ([0-9]*)$').search (name)
+        if match:
+            episode = int(match.group(1))
+
         group = ''
         match=re.compile('top-title">(.+?)<').findall (p)
         if match:
@@ -524,6 +529,30 @@ def page(url):
             match=re.compile('srcset="(.+?)"').findall (p)
             if match:
                 iconimage = match[0]
+
+        day = ''
+        month = ''
+        year = ''
+        match=re.compile('First shown: (.*?) (.*?) (.*)').search (p)
+        if match:
+            day = match.group(1)
+            month = match.group(2)
+            year = match.group(3)
+        else:
+            match=re.compile('First shown: (.*)').search (p)
+            if match:
+                day = "1"
+                month = "Jan"
+                year = match.group(1)
+
+        aired = ''
+        if month:
+            monthDict={
+                'Jan':'01', 'Feb':'02', 'Mar':'03', 'Apr':'04', 'May':'05', 'Jun':'06',
+                'Jul':'07', 'Aug':'08', 'Sep':'09', 'Oct':'10', 'Nov':'11', 'Dec':'12'}
+            if month in monthDict:
+                month = monthDict[month]
+            aired = year + '-' + month + '-' + day
 
         plot = ''
         match=re.compile('<p class="synopsis">(.+?)</p>').findall (p)
@@ -550,6 +579,7 @@ def page(url):
                 'thumbnail':iconimage,
                 'is_playable' : autoplay,
                 'context_menu': context_items,
+                'info': {'aired':aired, 'plot':unescape(plot), 'episode': episode},
             })
         context_items = []
         if episodes_url:
@@ -572,6 +602,9 @@ def page(url):
             'path': url,
             'thumbnail':get_icon_path("item_next"),
         })
+    plugin.set_content('episodes')
+    #BUG date doesn't work
+    #return plugin.finish(items, sort_methods=['playlist_order','label','date'])
     return items
 
 @plugin.route('/add_favourite/<name>/<url>/<thumbnail>/<is_episode>')
@@ -744,11 +777,11 @@ def index():
         'path': plugin.url_for('live'),
         'thumbnail':get_icon_path('tv'),
     },
-    {
-        'label': 'Red Button',
-        'path': plugin.url_for('red_button'),
-        'thumbnail':get_icon_path('red_button'),
-    },
+    #{
+    #    'label': 'Red Button',
+    #    'path': plugin.url_for('red_button'),
+    #    'thumbnail':get_icon_path('red_button'),
+    #},
     {
         'label': 'Schedules',
         'path': plugin.url_for('schedules'),
