@@ -518,7 +518,14 @@ def page(url):
         match = re.compile('Episode ([0-9]*)$').search (name)
         if match:
             episode = int(match.group(1))
-
+        else:
+            match = re.compile('Series [0-9]*: ([0-9]*)\.').search (name)
+            if match:
+                episode = int(match.group(1))
+            else:
+                match = re.compile(', ([0-9]*)\.').search (name)
+                if match:
+                    episode = int(match.group(1))
         group = ''
         match=re.compile('top-title">(.+?)<').findall (p)
         if match:
