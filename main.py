@@ -93,7 +93,7 @@ def schedule(url,name):
             play_name = "%s %s" % (title,subtitle)
             if is_available == "1":
                 URL = plugin.url_for('play_episode',url=episode_url,name=play_name,thumbnail=thumbnail,action=action)
-                NAME = "[COLOR orange]%s[/COLOR]" % NAME
+                NAME = "[COLOR %s]%s[/COLOR]" % (remove_formatting(plugin.get_setting('catchup.colour')),NAME)
             else:
                 URL = plugin.url_for('schedule',url=url, name=name)
             context_items = []
@@ -626,7 +626,7 @@ def page(url):
             context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add Favourite', 'XBMC.RunPlugin(%s)' %
             (plugin.url_for(add_favourite, name=name, url=episodes_url, thumbnail=iconimage, is_episode=False))))
             items.append({
-                'label': "[B]%s[/B]" % name,
+                'label': "[COLOR %s][B]%s[/B][/COLOR]" % (remove_formatting(plugin.get_setting('group.colour')),name),
                 'path': url,
                 'thumbnail':iconimage,
                 'context_menu': context_items,
@@ -740,7 +740,7 @@ def favourites():
             })
         else:
             items.append({
-                'label': "[B]%s[/B]" % unescape(name),
+                'label': "[COLOR %s][B]%s[/B][/COLOR]" % (remove_formatting(plugin.get_setting('group.colour')),unescape(name)),
                 'path': plugin.url_for('page',url=url),
                 'thumbnail':iconimage,
                 'is_playable' : False,
@@ -765,7 +765,7 @@ def categories():
     for url, name in match:
         url = 'http://www.bbc.co.uk/iplayer/categories/%s/all?sort=%s' % (url,order)
         items.append({
-            'label': "[B]%s[/B]" % unescape(name),
+            'label': "%s" % unescape(name),
             'path': plugin.url_for('page',url=url),
             'thumbnail':get_icon_path('lists'),
         })
