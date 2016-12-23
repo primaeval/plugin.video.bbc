@@ -8,8 +8,10 @@
 </category>
 <category label="Streams">
 <setting id="autoplay" type="bool" label="Autoplay" default="false"/>
+<setting type="sep"/>
 <setting label="Catchup Source" type="enum" default="0" id="catchup" values="HLS|RTMP"/>
 <setting label="Supplier" type="enum" default="0" id="supplier" values="AKAMAI|LIMELIGHT"/>
+<setting type="sep"/>
 <setting id="mpd" type="bool" label="Live MPD Menu (Krypton+ only)" default="false"/>
 </category>
 <category label="Cache">
