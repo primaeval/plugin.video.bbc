@@ -2,6 +2,7 @@
 <category label="Display">
 <setting id="view_mode" label="View Mode" type="number" default="50" />
 <setting label="Categories Order" type="enum" default="0" id="categories" values="A-Z|Date"/>
+<setting id="page" type="bool" label="Load All Pages at Once" default="false"/>
 </category>
 <category label="Streams">
 <setting id="autoplay" type="bool" label="Autoplay" default="false"/>

@@ -491,6 +491,34 @@ def letter(letter):
         })
     return items
 
+
+@plugin.route('/channel_a_z')
+def channel_a_z():
+    channel_list = [
+        ('bbcone',           'bbc_one_hd',              'BBC One'),
+        ('bbctwo',           'bbc_two_hd',              'BBC Two'),
+        ('tv/bbcthree',      'bbc_three_hd',          'BBC Three'),
+        ('bbcfour',          'bbc_four_hd',            'BBC Four'),
+        ('tv/cbbc',          'cbbc_hd',                    'CBBC'),
+        ('tv/cbeebies',      'cbeebies_hd',            'CBeebies'),
+        ('tv/bbcnews',       'bbc_news24',     'BBC News Channel'),
+        ('tv/bbcparliament', 'bbc_parliament',   'BBC Parliament'),
+        ('tv/bbcalba',       'bbc_alba',                   'Alba'),
+        ('tv/s4c',           's4cpbs',                      'S4C'),
+    ]
+    items = []
+    for id, img, name in channel_list:
+        icon = 'special://home/addons/plugin.video.bbc/resources/img/%s.png' % img
+        url = "http://www.bbc.co.uk/%s/a-z" % id
+        items.append({
+            'label' : name,
+            'thumbnail' : icon,
+            'path' : plugin.url_for('page',url=url),
+            'is_playable' : False
+        })
+    return items
+
+
 @plugin.route('/page/<url>')
 def page(url):
     global big_list_view
@@ -603,15 +631,24 @@ def page(url):
                 'thumbnail':iconimage,
                 'context_menu': context_items,
             })
-    next_page = re.compile('href="([^"]*?&amp;page=[0-9]*)"> Next').search (html)
+
+    next_page = re.compile('<span class="next.*?href="(.*?)"',flags=(re.DOTALL | re.MULTILINE)).search (html)
     if next_page:
         url = 'http://www.bbc.co.uk%s' % unescape(next_page.group(1))
-        url = plugin.url_for('page',url=url)
-        items.append({
-            'label': "[COLOR orange]Next Page >>[/COLOR]",
-            'path': url,
-            'thumbnail':get_icon_path("item_next"),
-        })
+        if 'page=' in url:
+            if plugin.get_setting('page') == 'true' and "search" not in url:
+                number = url.split('page=')[-1]
+                if int(number) > 5:
+                    xbmcgui.Dialog().notification("BBC TV","Page "+number,time=100,sound=False)
+                items = items + page(url)
+            else:
+                url = plugin.url_for('page',url=url)
+                items.append({
+                    'label': "[COLOR orange]Next Page >>[/COLOR]",
+                    'path': url,
+                    'thumbnail':get_icon_path("item_next"),
+                })
+
     plugin.set_content('episodes')
     #BUG date doesn't work
     #return plugin.finish(items, sort_methods=['playlist_order','label','date'])
@@ -810,6 +847,11 @@ def index():
     {
         'label': 'A-Z',
         'path': plugin.url_for('alphabet'),
+        'thumbnail':get_icon_path('lists'),
+    },
+    {
+        'label': 'Channel A-Z',
+        'path': plugin.url_for('channel_a_z'),
         'thumbnail':get_icon_path('lists'),
     },
     {
