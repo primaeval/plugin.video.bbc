@@ -203,6 +203,7 @@ def red_button():
                 })
     return items
 
+
 @plugin.route('/live')
 def live():
     hd = [
@@ -252,7 +253,7 @@ def live():
             items.append({
                 'label' : name,
                 'thumbnail' : icon,
-                'path' : url,
+                'path' : plugin.url_for('play_live',url=url, name=name, thumbnail=icon),
                 'is_playable' : True
             })
         else:
@@ -270,7 +271,7 @@ def live():
             items.append({
                 'label' : name,
                 'thumbnail' : icon,
-                'path' : url,
+                'path' : plugin.url_for('play_live',url=url, name=name, thumbnail=icon),
                 'is_playable' : True
             })
         else:
@@ -282,6 +283,21 @@ def live():
             })
 
     return items
+
+@plugin.route('/play_live/<url>/<name>/<thumbnail>')
+def play_live(url,name,thumbnail):
+    html = get(url)
+    match=re.compile('#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=(.+?),CODECS="(.+?)",RESOLUTION=(.+?)\n(.+?)$',flags=(re.DOTALL | re.MULTILINE)).findall(html)
+    for bandwidth,codec,resolution,url in sorted(match, key=lambda x: int(x[0]), reverse=True):
+        #label = "%s [%s bps] %s" % (name,bandwidth,resolution)
+        if bandwidth <= plugin.get_setting('live.bandwidth'):
+            item = {
+                'label' : name,
+                'thumbnail' : thumbnail,
+                'path' : url,
+                'is_playable' : True
+            }
+            return plugin.set_resolved_url(item)
 
 @plugin.route('/live_list/<url>/<name>/<thumbnail>')
 def live_list(url,name,thumbnail):
