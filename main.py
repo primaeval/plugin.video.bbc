@@ -203,6 +203,69 @@ def red_button():
                 })
     return items
 
+@plugin.route('/make_playlist')
+def make_playlist():
+    hd = [
+        ('bbc_one_hd',                       'BBC One'),
+        ('bbc_two_hd',                       'BBC Two'),
+        ('bbc_four_hd',                      'BBC Four'),
+        ('cbbc_hd',                          'CBBC'),
+        ('cbeebies_hd',                      'CBeebies'),
+        ('bbc_one_scotland_hd',              'BBC One Scotland'),
+        ('bbc_one_northern_ireland_hd',      'BBC One Northern Ireland'),
+        ('bbc_one_wales_hd',                 'BBC One Wales'),
+
+    ]
+    sd = [
+        ('bbc_news24',                       'BBC News Channel'),
+        ('bbc_parliament',                   'BBC Parliament'),
+        ('bbc_alba',                         'Alba'),
+        ('s4cpbs',                           'S4C'),
+        ('bbc_two_scotland',                 'BBC Two Scotland'),
+        ('bbc_two_northern_ireland_digital', 'BBC Two Northern Ireland'),
+        ('bbc_two_wales_digital',            'BBC Two Wales'),
+        ('bbc_two_england',                  'BBC Two England'),
+        ('bbc_one_london',                   'BBC One London'),
+        ('bbc_one_cambridge',                'BBC One Cambridge'),
+        ('bbc_one_channel_islands',          'BBC One Channel Islands'),
+        ('bbc_one_east',                     'BBC One East'),
+        ('bbc_one_east_midlands',            'BBC One East Midlands'),
+        ('bbc_one_east_yorkshire',           'BBC One East Yorkshire'),
+        ('bbc_one_north_east',               'BBC One North East'),
+        ('bbc_one_north_west',               'BBC One North West'),
+        ('bbc_one_oxford',                   'BBC One Oxford'),
+        ('bbc_one_south',                    'BBC One South'),
+        ('bbc_one_south_east',               'BBC One South East'),
+        ('bbc_one_west',                     'BBC One West'),
+        ('bbc_one_west_midlands',            'BBC One West Midlands'),
+        ('bbc_one_yorks',                    'BBC One Yorks')
+    ]
+
+    items = []
+
+    device = 'abr_hdtv'
+    provider = 'ak'
+    urls = []
+    for id, name  in hd :
+        url='http://a.files.bbci.co.uk/media/live/manifesto/audio_video/simulcast/hls/uk/%s/%s/%s.m3u8' % (device, provider, id)
+        urls.append((name,url))
+    device = 'hls_mobile_wifi'
+    for id, name  in sd :
+        url='http://a.files.bbci.co.uk/media/live/manifesto/audio_video/simulcast/hls/uk/%s/%s/%s.m3u8' % (device, provider, id)
+        urls.append((name,url))
+
+    playlist = xbmcvfs.File('special://profile/addon_data/plugin.video.bbc/BBC.m3u8','wb')
+    playlist.write('#EXTM3U\n')
+    for name,url in urls:
+        html = get(url)
+        match=re.compile('#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=(.+?),CODECS="(.+?)",RESOLUTION=(.+?)\n(.+?)$',flags=(re.DOTALL | re.MULTILINE)).findall(html)
+        for bandwidth,codec,resolution,stream_url in sorted(match, key=lambda x: int(x[0]), reverse=True):
+            if bandwidth <= plugin.get_setting('live.bandwidth'):
+                playlist.write('#EXTINF:0,%s\n%s\n' % (name,stream_url))
+                break
+    playlist.close()
+
+
 
 @plugin.route('/live')
 def live():
@@ -879,6 +942,11 @@ def index():
         'label': 'Favourites',
         'path': plugin.url_for('favourites'),
         'thumbnail':get_icon_path('favourites'),
+    },
+    {
+        'label': 'Make Live Playlist',
+        'path': plugin.url_for('make_playlist'),
+        'thumbnail':get_icon_path('settings'),
     },
     ]
     if plugin.get_setting('mpd') == 'true':
