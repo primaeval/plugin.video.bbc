@@ -7,6 +7,7 @@ import re
 import requests,urllib
 import os,sys
 import xml.etree.ElementTree as ET
+import base64
 
 plugin = Plugin()
 big_list_view = False
@@ -39,12 +40,16 @@ def unescape( str ):
     str = str.replace("&#39;","'")
     return str
 
-def get(url):
+def get(url,proxy=False):
     headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
+    if proxy:
+        headers['Referer'] = 'http://www.justproxy.co.uk/'
+        url = 'http://www.justproxy.co.uk/index.php?q=%s' % base64.b64encode(url)
     r = requests.get(url,headers=headers)
     if r.status_code != requests.codes.ok:
         return
     html = r.content
+    log(html)
     return html
 
 @plugin.route('/schedule/<url>/<name>')
@@ -377,6 +382,40 @@ def live_list(url,name,thumbnail):
         })
     return items
 
+@plugin.route('/proxy_play_episode/<url>/<name>/<thumbnail>/<action>')
+def proxy_play_episode(url,name,thumbnail,action):
+    html = get(url)
+    vpid=re.compile('"vpid":"(.+?)"').findall(html)[0]
+    if not vpid:
+        return
+
+    NEW_URL= "http://open.live.bbc.co.uk/mediaselector/5/select/version/2.0/mediaset/apple-ipad-hls/vpid/%s" % vpid
+    html = get(NEW_URL,True)
+    urls = []
+    match=re.compile('application="(.+?)".+?String="(.+?)".+?identifier="(.+?)".+?protocol="(.+?)".+?server="(.+?)".+?supplier="(.+?)"').findall(html.replace('amp;',''))
+    for app,auth , playpath ,protocol ,server,supplier in match:
+
+        port = '1935'
+        if protocol == 'rtmpt': port = 80
+        if supplier == 'limelight':
+            url="%s://%s:%s/ app=%s?%s tcurl=%s://%s:%s/%s?%s playpath=%s" % (protocol,server,port,app,auth,protocol,server,port,app,auth,playpath)
+            res = playpath.split('secure_auth/')[1]
+            res = res.split('kbps')[0]
+            urls.append([url,res])
+
+    items = []
+    for url,res in sorted(urls,key = lambda x: int(x[1]), reverse=True):
+
+        items.append({
+            'label': "%s [%s kbps]" % (name, res),
+            'path': url,
+            'thumbnail': thumbnail,
+            'is_playable': True
+        })
+
+    return items
+
+
 @plugin.route('/play_episode/<url>/<name>/<thumbnail>/<action>')
 def play_episode(url,name,thumbnail,action):
     html = get(url)
@@ -389,6 +428,8 @@ def play_episode(url,name,thumbnail,action):
     if int(plugin.get_setting('catchup'))==1:
         NEW_URL= "http://open.live.bbc.co.uk/mediaselector/5/select/version/2.0/mediaset/stb-all-h264/vpid/%s" % vpid
         html = get(NEW_URL)
+        if not html:
+            return
         match = re.compile('href="([^"]*?subtitles[^"]*?)"').search(html)
         if match:
             subtitles = match.group(1)
@@ -411,6 +452,8 @@ def play_episode(url,name,thumbnail,action):
     else:
         NEW_URL= "http://open.live.bbc.co.uk/mediaselector/5/select/version/2.0/mediaset/iptv-all/vpid/%s" % vpid
         html = get(NEW_URL)
+        if not html:
+            return
         match = re.compile('href="([^"]*?subtitles[^"]*?)"').search(html)
         if match:
             subtitles = match.group(1)
@@ -685,7 +728,11 @@ def page(url):
         context_items = []
         if episode_url:
             name = unescape(name)
-            url = plugin.url_for('play_episode',url=episode_url,name=name,thumbnail=iconimage,action=action)
+            if plugin.get_setting('proxy') == 'true':
+                url = plugin.url_for('proxy_play_episode',url=episode_url,name=name,thumbnail=iconimage,action=action)
+                autoplay = False
+            else:
+                url = plugin.url_for('play_episode',url=episode_url,name=name,thumbnail=iconimage,action=action)
             context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add Favourite', 'XBMC.RunPlugin(%s)' %
             (plugin.url_for(add_favourite, name=name, url=episode_url, thumbnail=iconimage, is_episode=True))))
             context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Cache', 'XBMC.RunPlugin(%s)' %
@@ -834,7 +881,7 @@ def categories():
     headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
     html = get(url)
     match = re.compile(
-        '<a href="/iplayer/categories/(.+?)" class="stat">(.+?)</a>'
+        '<a href="/iplayer/categories/(.+?)".*?>(.+?)</a>'
         ).findall(html)
     items = []
     if plugin.get_setting('categories') == '0':
