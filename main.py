@@ -385,7 +385,21 @@ def live_list(url,name,thumbnail):
 @plugin.route('/proxy_play_episode/<url>/<name>/<thumbnail>/<action>')
 def proxy_play_episode(url,name,thumbnail,action):
     html = get(url)
-    vpid=re.compile('"vpid":"(.+?)"').findall(html)[0]
+    vpid = ''
+    match = re.search(r'mediator.bind\((.*?), document\.getElementById\(\'tviplayer\'\)\);', html, re.DOTALL)
+    if match:
+        data = match.group(1)
+        import json
+        json_data = json.loads(data)
+        # print json.dumps(json_data, indent=2, sort_keys=True)
+        name = json_data['episode']['title']
+        description = json_data['episode']['synopses']['large']
+        image = json_data['episode']['images']['standard'].replace('{recipe}','832x468')
+        for stream in json_data['episode']['versions']:
+            if ((stream['kind'] == 'original') or
+               (stream['kind'] == 'iplayer-version')):
+                vpid = stream_id_st = stream['id']
+
     if not vpid:
         return
 
@@ -419,7 +433,21 @@ def proxy_play_episode(url,name,thumbnail,action):
 @plugin.route('/play_episode/<url>/<name>/<thumbnail>/<action>')
 def play_episode(url,name,thumbnail,action):
     html = get(url)
-    vpid=re.compile('"vpid":"(.+?)"').findall(html)[0]
+    vpid = ''
+    match = re.search(r'mediator.bind\((.*?), document\.getElementById\(\'tviplayer\'\)\);', html, re.DOTALL)
+    if match:
+        data = match.group(1)
+        import json
+        json_data = json.loads(data)
+        # print json.dumps(json_data, indent=2, sort_keys=True)
+        name = json_data['episode']['title']
+        description = json_data['episode']['synopses']['large']
+        image = json_data['episode']['images']['standard'].replace('{recipe}','832x468')
+        for stream in json_data['episode']['versions']:
+            if ((stream['kind'] == 'original') or
+               (stream['kind'] == 'iplayer-version')):
+                vpid = stream_id_st = stream['id']
+
     if not vpid:
         return
 
