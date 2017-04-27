@@ -48,12 +48,12 @@ def get(url,proxy=False):
     if proxy:
         headers['Referer'] = 'http://www.justproxy.co.uk/'
         url = 'http://www.justproxy.co.uk/index.php?q=%s' % base64.b64encode(url)
-    log(url)
-    r = requests.get(url,headers=headers)
+    #log(url)
+    r = requests.get(url,headers=headers,verify=False)
     if r.status_code != requests.codes.ok:
         return
     html = r.content
-    log(html)
+    #log(html)
     return html
 
 @plugin.route('/schedule/<url>/<name>')
@@ -108,6 +108,8 @@ def schedule(url,name):
             context_items = []
             context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add Favourite', 'XBMC.RunPlugin(%s)' %
             (plugin.url_for(add_favourite, name=play_name, url=episode_url, thumbnail=thumbnail, is_episode=True))))
+            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add PVR', 'XBMC.RunPlugin(%s)' %
+            (plugin.url_for(add_pvr, name=play_name, url=episode_url, thumbnail=thumbnail, is_episode=True))))
             context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Cache', 'XBMC.RunPlugin(%s)' %
             (plugin.url_for('play_episode',url=episode_url,name=play_name,thumbnail=thumbnail,action="cache"))))
             items.append({
@@ -433,6 +435,68 @@ def proxy_play_episode(url,name,thumbnail,action):
 
     return items
 
+@plugin.route('/cache_all/<url>')
+def cache_all(url):
+    headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
+    html = get(url)
+
+    items = []
+    html_items=html.split('data-ip-id="')
+    for p in html_items:
+        IPID=p.split('"')[0]
+        urls=re.compile('href="(.+?)"').findall (p)
+
+        episode_url = ''
+        episodes_url = ''
+        for u in urls:
+            if u.startswith('/iplayer/episode/'):
+                episode_url = 'http://www.bbc.co.uk%s' % u
+            elif u.startswith('/iplayer/episodes/'):
+                episodes_url = 'http://www.bbc.co.uk%s' % u
+
+        name = re.compile('title="(.+?)"').findall (p)[0]
+
+        series = 0
+        episode = None
+        match = re.compile('Episode ([0-9]*)$').search (name)
+        if match:
+            episode = int(match.group(1))
+        else:
+            match = re.compile('Series ([0-9]*): ([0-9]*)\.').search (name)
+            if match:
+                series = int(match.group(1))
+                episode = int(match.group(2))
+            else:
+                match = re.compile(', ([0-9]*)\.').search (name)
+                if match:
+                    episode = int(match.group(1))
+        group = ''
+        match=re.compile('top-title">(.+?)<').findall (p)
+        if match:
+            group = match[0]
+
+        iconimage = get_icon_path('tv')
+        match=re.compile('img src="(.+?)"').findall (p)
+        if match:
+            iconimage = match[0]
+        else:
+            match=re.compile('srcset="(.+?)"').findall (p)
+            if match:
+                iconimage = match[0]
+
+        if episode:
+            label = "%s S%03dE%03d" % (name,series,episode)
+            label = re.sub('[%s]' % re.escape(':\/?*><|'),'',label)
+            #log((episode_url,label,iconimage))
+            play_episode(episode_url,label,iconimage,"cache")
+
+
+    next_page = re.compile('<span class="next.*?href="(.*?)"',flags=(re.DOTALL | re.MULTILINE)).search (html)
+    if next_page:
+        url = 'http://www.bbc.co.uk%s' % unescape(next_page.group(1))
+        if 'page=' in url:
+            cache_all(url)
+
 
 @plugin.route('/play_episode/<url>/<name>/<thumbnail>/<action>')
 def play_episode(url,name,thumbnail,action):
@@ -444,8 +508,17 @@ def play_episode(url,name,thumbnail,action):
         import json
         json_data = json.loads(data)
         # print json.dumps(json_data, indent=2, sort_keys=True)
-        name = json_data['episode']['title']
-        description = json_data['episode']['synopses']['large']
+        json_name = json_data['episode']['title']
+        try:
+            synopses = json_data['episode']['synopses']
+            if 'large' in synopses:
+                description = synopses['large']
+            elif 'medium' in synopses:
+                description = synopses['medium']
+            else:
+                description = synopses['small']
+        except:
+            description = ''
         image = json_data['episode']['images']['standard'].replace('{recipe}','832x468')
         for stream in json_data['episode']['versions']:
             if ((stream['kind'] == 'original') or
@@ -563,6 +636,7 @@ def play_episode(url,name,thumbnail,action):
     elif action == "cache":
         URL=max(URL)[1]
         BASE = re.compile('/[^/]*?$').sub('/',URL)
+        #log(URL)
         html = get(URL)
 
         if "variants" in html:
@@ -638,10 +712,17 @@ def letter(letter):
     match=re.compile('<a href="/iplayer/brand/(.+?)".+?<span class="title">(.+?)</span>',re.DOTALL).findall (html)
     for url , name in match:
         url = "http://www.bbc.co.uk/iplayer/episodes/%s" % url
+        thumbnail = get_icon_path('lists')
+        context_items = []
+        context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add Favourite', 'XBMC.RunPlugin(%s)' %
+        (plugin.url_for(add_favourite, name=name, url=url, thumbnail=thumbnail, is_episode=False))))
+        context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add PVR', 'XBMC.RunPlugin(%s)' %
+        (plugin.url_for(add_pvr, name=name, url=url, thumbnail=thumbnail, is_episode=False))))
         items.append({
             'label': unescape(name),
             'path': plugin.url_for('page',url=url),
-            'thumbnail':get_icon_path('lists'),
+            'thumbnail':thumbnail,
+            'context_menu': context_items,
         })
     return items
 
@@ -767,6 +848,8 @@ def page(url):
                 url = plugin.url_for('play_episode',url=episode_url,name=name,thumbnail=iconimage,action=action)
             context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add Favourite', 'XBMC.RunPlugin(%s)' %
             (plugin.url_for(add_favourite, name=name, url=episode_url, thumbnail=iconimage, is_episode=True))))
+            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add PVR', 'XBMC.RunPlugin(%s)' %
+            (plugin.url_for(add_pvr, name=name, url=episode_url, thumbnail=iconimage, is_episode=True))))
             context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Cache', 'XBMC.RunPlugin(%s)' %
             (plugin.url_for('play_episode',url=episode_url,name=name,thumbnail=iconimage,action="cache"))))
             items.append({
@@ -783,6 +866,10 @@ def page(url):
             url = plugin.url_for('page',url=episodes_url)
             context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add Favourite', 'XBMC.RunPlugin(%s)' %
             (plugin.url_for(add_favourite, name=name, url=episodes_url, thumbnail=iconimage, is_episode=False))))
+            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add PVR', 'XBMC.RunPlugin(%s)' %
+            (plugin.url_for(add_pvr, name=name, url=episodes_url, thumbnail=iconimage, is_episode=False))))
+            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Cache All', 'XBMC.RunPlugin(%s)' %
+            (plugin.url_for('cache_all',url=episodes_url))))
             items.append({
                 'label': "[COLOR %s][B]%s[/B][/COLOR]" % (remove_formatting(plugin.get_setting('group.colour')),name),
                 'path': url,
@@ -811,6 +898,17 @@ def page(url):
     #BUG date doesn't work
     #return plugin.finish(items, sort_methods=['playlist_order','label','date'])
     return items
+
+@plugin.route('/add_pvr/<name>/<url>/<thumbnail>/<is_episode>')
+def add_pvr(name,url,thumbnail,is_episode):
+    pvrs = plugin.get_storage('pvrs')
+    pvrs[name] = '|'.join((url,thumbnail,is_episode))
+
+@plugin.route('/remove_pvr/<name>')
+def remove_pvr(name):
+    pvrs = plugin.get_storage('pvrs')
+    del pvrs[name]
+    xbmc.executebuiltin('Container.Refresh')
 
 @plugin.route('/add_favourite/<name>/<url>/<thumbnail>/<is_episode>')
 def add_favourite(name,url,thumbnail,is_episode):
@@ -897,6 +995,48 @@ def favourites():
                 'context_menu': context_items,
             })
         else:
+            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Cache All', 'XBMC.RunPlugin(%s)' %
+            (plugin.url_for('cache_all',url=url))))
+            items.append({
+                'label': "[COLOR %s][B]%s[/B][/COLOR]" % (remove_formatting(plugin.get_setting('group.colour')),unescape(name)),
+                'path': plugin.url_for('page',url=url),
+                'thumbnail':iconimage,
+                'is_playable' : False,
+                'context_menu': context_items,
+            })
+    return items
+
+@plugin.route('/pvrs')
+def pvrs():
+    global big_list_view
+    big_list_view = True
+    pvrs = plugin.get_storage('pvrs')
+    items = []
+    if plugin.get_setting('autoplay') == 'true':
+        autoplay = True
+        action = "autoplay"
+    else:
+        autoplay = False
+        action = "list"
+    for name in sorted(pvrs):
+        fav = pvrs[name]
+        url,iconimage,is_episode = fav.split('|')
+        context_items = []
+        context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Remove pvr', 'XBMC.RunPlugin(%s)' %
+        (plugin.url_for(remove_pvr, name=name))))
+        if is_episode == "True":
+            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Cache', 'XBMC.RunPlugin(%s)' %
+            (plugin.url_for('play_episode',url=url,name=name,thumbnail=iconimage,action="cache"))))
+            items.append({
+                'label': unescape(name),
+                'path': plugin.url_for('play_episode',url=url,name=name,thumbnail=iconimage,action=action),
+                'thumbnail':iconimage,
+                'is_playable' : autoplay,
+                'context_menu': context_items,
+            })
+        else:
+            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Cache All', 'XBMC.RunPlugin(%s)' %
+            (plugin.url_for('cache_all',url=url))))
             items.append({
                 'label': "[COLOR %s][B]%s[/B][/COLOR]" % (remove_formatting(plugin.get_setting('group.colour')),unescape(name)),
                 'path': plugin.url_for('page',url=url),
@@ -1021,6 +1161,11 @@ def index():
         'label': 'Favourites',
         'path': plugin.url_for('favourites'),
         'thumbnail':get_icon_path('favourites'),
+    },
+    {
+        'label': 'PVR',
+        'path': plugin.url_for('pvrs'),
+        'thumbnail':get_icon_path('clock'),
     },
     {
         'label': 'Make Live Playlist',
