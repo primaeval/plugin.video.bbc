@@ -9,6 +9,9 @@ import os,sys
 import xml.etree.ElementTree as ET
 import base64
 
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
 plugin = Plugin()
 big_list_view = False
 
@@ -45,6 +48,7 @@ def get(url,proxy=False):
     if proxy:
         headers['Referer'] = 'http://www.justproxy.co.uk/'
         url = 'http://www.justproxy.co.uk/index.php?q=%s' % base64.b64encode(url)
+    log(url)
     r = requests.get(url,headers=headers)
     if r.status_code != requests.codes.ok:
         return
