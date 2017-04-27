@@ -445,6 +445,10 @@ def proxy_play_episode(url,name,thumbnail,action):
 
     return items
 
+@plugin.route('/start_pvr_service')
+def start_pvr_service():
+    xbmc.executebuiltin('XBMC.RunPlugin(plugin://plugin.video.bbc/pvr_service)')
+
 @plugin.route('/pvr_service')
 def pvr_service():
     pvrs = plugin.get_storage('pvrs')
@@ -1161,6 +1165,9 @@ def live_mpd():
 
 @plugin.route('/')
 def index():
+    context_items = []
+    context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'PVR Service', 'XBMC.RunPlugin(%s)' %
+    (plugin.url_for('start_pvr_service'))))
     items = [
     {
         'label': 'Live',
@@ -1211,6 +1218,7 @@ def index():
         'label': 'PVR',
         'path': plugin.url_for('pvr_list'),
         'thumbnail':get_icon_path('clock'),
+        'context_menu': context_items,
     },
     {
         'label': 'Make Live Playlist',
