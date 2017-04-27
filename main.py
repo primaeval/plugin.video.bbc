@@ -50,7 +50,11 @@ def get(url,proxy=False):
         headers['Referer'] = 'http://www.justproxy.co.uk/'
         url = 'http://www.justproxy.co.uk/index.php?q=%s' % base64.b64encode(url)
     #log(url)
-    r = requests.get(url,headers=headers,verify=False)
+    try:
+        #log(("GGG",url))
+        r = requests.get(url,headers=headers,verify=False)
+    except:
+        return
     if r.status_code != requests.codes.ok:
         return
     html = r.content
@@ -441,10 +445,32 @@ def proxy_play_episode(url,name,thumbnail,action):
 
     return items
 
+@plugin.route('/pvr_service')
+def pvr_service():
+    pvrs = plugin.get_storage('pvrs')
+    for name in pvrs:
+        #log(name)
+        split = pvrs[name].split('|')
+        url = split[0]
+        if len(split) > 0:
+            iconimage = split[1]
+        else:
+            iconimage = ""
+        if '/episodes/' in url:
+            #log(url)
+            cache_all(url)
+        else:
+            #log((url,name))
+            play_episode(url,name,iconimage,"cache")
+
+
 @plugin.route('/cache_all/<url>')
 def cache_all(url):
+    #log(("CCC",url))
     headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
     html = get(url)
+    if not html:
+        return
 
     items = []
     html_items=html.split('data-ip-id="')
@@ -506,7 +532,13 @@ def cache_all(url):
 
 @plugin.route('/play_episode/<url>/<name>/<thumbnail>/<action>')
 def play_episode(url,name,thumbnail,action):
+    if action == "cache":
+        cached = plugin.get_storage('cached')
+        if name in cached:
+            return
     html = get(url)
+    if not html:
+        return
     vpid = ''
     match = re.search(r'mediator.bind\((.*?), document\.getElementById\(\'tviplayer\'\)\);', html, re.DOTALL)
     if match:
@@ -588,34 +620,35 @@ def play_episode(url,name,thumbnail,action):
 
     if subtitles:
         data = get(subtitles)
-        lines = data.splitlines()
-        i = 0
-        f = xbmcvfs.File('special://profile/addon_data/plugin.video.bbc/subtitles.srt','wb')
-        for line in lines:
-            if line.strip().startswith('<p '):
-                i = i + 1
-                match = re.compile('begin="([^"]*?)"').search(line)
-                if match:
-                    begin = match.group(1)
-                    begin = begin.replace('.',',')
-                    if len(begin.split(',')[-1]) == 2:
-                        begin = begin + '0'
-                match = re.compile('end="([^"]*?)"').search(line)
-                if match:
-                    end = match.group(1)
-                    end = end.replace('.',',')
-                    if len(end.split(',')[-1]) == 2:
-                        end = end + '0'
-                match = re.compile('>(.*)<').search(line)
-                if match:
-                    text = match.group(1).strip()
-                    text = text.replace('<br />','\n')
-                    text = text.replace('  ','\n')
-                    text = re.compile('<[^>]*>').sub('',text)
-                f.write(str(i)+'\n')
-                f.write("%s --> %s\n" % (begin,end))
-                f.write(text+'\n\n')
-        f.close()
+        if data:
+            lines = data.splitlines()
+            i = 0
+            f = xbmcvfs.File('special://profile/addon_data/plugin.video.bbc/subtitles.srt','wb')
+            for line in lines:
+                if line.strip().startswith('<p '):
+                    i = i + 1
+                    match = re.compile('begin="([^"]*?)"').search(line)
+                    if match:
+                        begin = match.group(1)
+                        begin = begin.replace('.',',')
+                        if len(begin.split(',')[-1]) == 2:
+                            begin = begin + '0'
+                    match = re.compile('end="([^"]*?)"').search(line)
+                    if match:
+                        end = match.group(1)
+                        end = end.replace('.',',')
+                        if len(end.split(',')[-1]) == 2:
+                            end = end + '0'
+                    match = re.compile('>(.*)<').search(line)
+                    if match:
+                        text = match.group(1).strip()
+                        text = text.replace('<br />','\n')
+                        text = text.replace('  ','\n')
+                        text = re.compile('<[^>]*>').sub('',text)
+                    f.write(str(i)+'\n')
+                    f.write("%s --> %s\n" % (begin,end))
+                    f.write(text+'\n\n')
+            f.close()
 
     if action == "autoplay":
         URL=max(URL)[1]
@@ -647,6 +680,8 @@ def play_episode(url,name,thumbnail,action):
         BASE = re.compile('/[^/]*?$').sub('/',URL)
         #log(URL)
         html = get(URL)
+        if not html:
+            return
 
         if "variants" in html:
             lines = html.splitlines()
@@ -1016,8 +1051,8 @@ def favourites():
             })
     return items
 
-@plugin.route('/pvrs')
-def pvrs():
+@plugin.route('/pvr_list')
+def pvr_list():
     global big_list_view
     big_list_view = True
     pvrs = plugin.get_storage('pvrs')
@@ -1174,7 +1209,7 @@ def index():
     },
     {
         'label': 'PVR',
-        'path': plugin.url_for('pvrs'),
+        'path': plugin.url_for('pvr_list'),
         'thumbnail':get_icon_path('clock'),
     },
     {

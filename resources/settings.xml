@@ -22,5 +22,11 @@
 <setting id="cache" label="Cache" type="folder" option="writeable" default="special://temp/" />
 <setting id="cache.progress" type="bool" label="Show Progress" default="false"/>
 <setting label="Reset Cached List" type="action" action="RunPlugin(plugin://plugin.video.bbc/reset_cached)"/>
+<setting type="lsep" label="PVR"/>
+<setting id="pvr.service" label="PVR Service" type="bool" default="false" />
+<setting id="pvr.startup" label="Update on Login" type="bool" default="false" visible="eq(-1,true)"/>
+<setting id="pvr.type" label="Service Schedule Type" type="enum" default="Time" visible="eq(-2,true)" values="None|Period|Time" />
+<setting id="pvr.interval" label="Interval" type="number" default="6"  visible="eq(-3,true)+eq(-1,1)" />
+<setting id="pvr.time" type="time" label="Service Time" default="03:33" visible="eq(-4,true)+eq(-2,2)"/>
 </category>
 </settings>
