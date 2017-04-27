@@ -1179,11 +1179,11 @@ def index():
     #    'path': plugin.url_for('red_button'),
     #    'thumbnail':get_icon_path('red_button'),
     #},
-    {
-        'label': 'Schedules',
-        'path': plugin.url_for('schedules'),
-        'thumbnail':get_icon_path('tv'),
-    },
+    #{
+    #    'label': 'Schedules',
+    #    'path': plugin.url_for('schedules'),
+    #    'thumbnail':get_icon_path('tv'),
+    #},
     {
         'label': 'Most Popular',
         'path': plugin.url_for('page',url='http://www.bbc.co.uk/iplayer/group/most-popular'),
@@ -1199,11 +1199,11 @@ def index():
         'path': plugin.url_for('alphabet'),
         'thumbnail':get_icon_path('lists'),
     },
-    {
-        'label': 'Channel A-Z',
-        'path': plugin.url_for('channel_a_z'),
-        'thumbnail':get_icon_path('lists'),
-    },
+    #{
+    #    'label': 'Channel A-Z',
+    #    'path': plugin.url_for('channel_a_z'),
+    #    'thumbnail':get_icon_path('lists'),
+    #},
     {
         'label': 'Categories',
         'path': plugin.url_for('categories'),
