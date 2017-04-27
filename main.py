@@ -8,6 +8,7 @@ import requests,urllib
 import os,sys
 import xml.etree.ElementTree as ET
 import base64
+import datetime
 
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -55,6 +56,11 @@ def get(url,proxy=False):
     html = r.content
     #log(html)
     return html
+
+@plugin.route('/reset_cached')
+def reset_cached():
+    cached = plugin.get_storage('cached')
+    cached.clear()
 
 @plugin.route('/schedule/<url>/<name>')
 def schedule(url,name):
@@ -634,6 +640,9 @@ def play_episode(url,name,thumbnail,action):
             })
         return items
     elif action == "cache":
+        cached = plugin.get_storage('cached')
+        if name in cached:
+            return
         URL=max(URL)[1]
         BASE = re.compile('/[^/]*?$').sub('/',URL)
         #log(URL)
@@ -675,6 +684,7 @@ def play_episode(url,name,thumbnail,action):
                 d.update(percent, "BBC", "%s" % name)
                 count = count + 1
         f.close()
+        cached[name] = datetime.datetime.now()
         if progress:
             d.close()
         else:
