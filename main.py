@@ -118,7 +118,7 @@ def schedule(url,name):
             context_items = []
             context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add Favourite', 'XBMC.RunPlugin(%s)' %
             (plugin.url_for(add_favourite, name=play_name, url=episode_url, thumbnail=thumbnail, is_episode=True))))
-            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add PVR', 'XBMC.RunPlugin(%s)' %
+            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add to PVR', 'XBMC.RunPlugin(%s)' %
             (plugin.url_for(add_pvr, name=play_name, url=episode_url, thumbnail=thumbnail, is_episode=True))))
             context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Cache', 'XBMC.RunPlugin(%s)' %
             (plugin.url_for('play_episode',url=episode_url,name=play_name,thumbnail=thumbnail,action="cache"))))
@@ -765,7 +765,7 @@ def letter(letter):
         context_items = []
         context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add Favourite', 'XBMC.RunPlugin(%s)' %
         (plugin.url_for(add_favourite, name=name, url=url, thumbnail=thumbnail, is_episode=False))))
-        context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add PVR', 'XBMC.RunPlugin(%s)' %
+        context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add to PVR', 'XBMC.RunPlugin(%s)' %
         (plugin.url_for(add_pvr, name=name, url=url, thumbnail=thumbnail, is_episode=False))))
         items.append({
             'label': unescape(name),
@@ -897,7 +897,7 @@ def page(url):
                 url = plugin.url_for('play_episode',url=episode_url,name=name,thumbnail=iconimage,action=action)
             context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add Favourite', 'XBMC.RunPlugin(%s)' %
             (plugin.url_for(add_favourite, name=name, url=episode_url, thumbnail=iconimage, is_episode=True))))
-            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add PVR', 'XBMC.RunPlugin(%s)' %
+            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add to PVR', 'XBMC.RunPlugin(%s)' %
             (plugin.url_for(add_pvr, name=name, url=episode_url, thumbnail=iconimage, is_episode=True))))
             context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Cache', 'XBMC.RunPlugin(%s)' %
             (plugin.url_for('play_episode',url=episode_url,name=name,thumbnail=iconimage,action="cache"))))
@@ -915,7 +915,7 @@ def page(url):
             url = plugin.url_for('page',url=episodes_url)
             context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add Favourite', 'XBMC.RunPlugin(%s)' %
             (plugin.url_for(add_favourite, name=name, url=episodes_url, thumbnail=iconimage, is_episode=False))))
-            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add PVR', 'XBMC.RunPlugin(%s)' %
+            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add to PVR', 'XBMC.RunPlugin(%s)' %
             (plugin.url_for(add_pvr, name=name, url=episodes_url, thumbnail=iconimage, is_episode=False))))
             context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Cache All', 'XBMC.RunPlugin(%s)' %
             (plugin.url_for('cache_all',url=episodes_url))))
@@ -1071,7 +1071,7 @@ def pvr_list():
         fav = pvrs[name]
         url,iconimage,is_episode = fav.split('|')
         context_items = []
-        context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Remove pvr', 'XBMC.RunPlugin(%s)' %
+        context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Remove from PVR', 'XBMC.RunPlugin(%s)' %
         (plugin.url_for(remove_pvr, name=name))))
         if is_episode == "True":
             context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Cache', 'XBMC.RunPlugin(%s)' %
