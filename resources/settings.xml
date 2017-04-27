@@ -19,7 +19,7 @@
 <setting id="proxy" type="bool" label="Proxy (low res catchup play only)" default="false"/>
 </category>
 <category label="Cache">
-<setting id="cache" label="Cache" type="folder" option="writeable" default="special://temp" />
+<setting id="cache" label="Cache" type="folder" option="writeable" default="special://temp/" />
 <setting id="cache.progress" type="bool" label="Show Progress" default="false"/>
 </category>
 </settings>
