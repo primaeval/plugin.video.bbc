@@ -610,7 +610,7 @@ def play_episode(url,name,thumbnail,action):
             match = re.compile('media bitrate="(.+?)"').search(line)
             if match:
                 bitrate = match.group(1)
-            match = re.compile('.*?href="(.+?)".*?protocol="(.+?)" supplier="(.+?)" transferFormat="(.+?)"/>').search(line)
+            match = re.compile('.*?href="(http://.+?)".*?protocol="(.+?)" supplier="(.+?)" transferFormat="(.+?)"/>').search(line)
             if match:
                 url = match.group(1)
                 protocol = match.group(2)
