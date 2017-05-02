@@ -1111,6 +1111,8 @@ def categories():
     else:
         order = "dateavailable"
     for url, name in match:
+        if name.startswith('{'):
+            continue
         if url.startswith('http'):
             url = '%s/all?sort=%s' % (url,order)
         else:
