@@ -1102,15 +1102,20 @@ def categories():
     headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
     html = get(url)
     match = re.compile(
-        '<a href="/iplayer/categories/(.+?)".*?>(.+?)</a>'
+        '<a href="(.*?/iplayer/categories/.+?)".*?>(.+?)</a>'
         ).findall(html)
+    log(match)
     items = []
     if plugin.get_setting('categories') == '0':
         order = "atoz"
     else:
         order = "dateavailable"
     for url, name in match:
-        url = 'http://www.bbc.co.uk/iplayer/categories/%s/all?sort=%s' % (url,order)
+        if url.startswith('http'):
+            url = '%s/all?sort=%s' % (url,order)
+        else:
+            url = 'http://www.bbc.co.uk%s/all?sort=%s' % (url,order)
+
         items.append({
             'label': "%s" % unescape(name),
             'path': plugin.url_for('page',url=url),
