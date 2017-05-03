@@ -564,11 +564,19 @@ def play_episode(url,name,thumbnail,action):
         image = json_data['episode']['images']['standard'].replace('{recipe}','832x468')
         for stream in json_data['episode']['versions']:
             if ((stream['kind'] == 'original') or
-               (stream['kind'] == 'iplayer-version')):
-                vpid = stream_id_st = stream['id']
-        #TODO audio-described etc
+               (stream['kind'] == 'iplayer-version') or
+               (stream['kind'] == 'editorial')):
+                stream_id_st = stream['id']
+            elif (stream['kind'] == 'signed'):
+                stream_id_sl = stream['id']
+            elif (stream['kind'] == 'audio-described'):
+                stream_id_ad = stream['id']
+        vpid = stream_id_st
         if not vpid:
-            vpid = json_data['episode']['versions'][0]['id']
+            try:
+                vpid = json_data['episode']['versions'][0]['id']
+            except:
+                pass
 
     if not vpid:
         return
