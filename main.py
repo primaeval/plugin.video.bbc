@@ -566,6 +566,9 @@ def play_episode(url,name,thumbnail,action):
             if ((stream['kind'] == 'original') or
                (stream['kind'] == 'iplayer-version')):
                 vpid = stream_id_st = stream['id']
+        #TODO audio-described etc
+        if not vpid:
+            vpid = json_data['episode']['versions'][0]['id']
 
     if not vpid:
         return
