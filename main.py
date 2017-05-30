@@ -562,6 +562,7 @@ def play_episode(url,name,thumbnail,action):
         except:
             description = ''
         image = json_data['episode']['images']['standard'].replace('{recipe}','832x468')
+        stream_id_st = ""
         for stream in json_data['episode']['versions']:
             if ((stream['kind'] == 'original') or
                (stream['kind'] == 'iplayer-version') or
@@ -575,7 +576,10 @@ def play_episode(url,name,thumbnail,action):
         vpid = stream_id_st
         if not vpid:
             try:
-                vpid = json_data['episode']['versions'][0]['id']
+                for i in range(len(json_data['episode']['versions'])):
+                    vpid = json_data['episode']['versions'][i]['id']
+                    if vpid:
+                        break
             except:
                 pass
 
