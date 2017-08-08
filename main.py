@@ -614,6 +614,8 @@ def play_episode(url,name,thumbnail,action):
                     URL.append([(eval(resolution)),url])
     else:
         NEW_URL= "http://open.live.bbc.co.uk/mediaselector/5/select/version/2.0/mediaset/iptv-all/vpid/%s" % vpid
+        URL.append((1,NEW_URL))
+        '''
         html = get(NEW_URL)
         if not html:
             return
@@ -637,6 +639,7 @@ def play_episode(url,name,thumbnail,action):
                         URL.append([int(bitrate),url])
                     elif plugin.get_setting('supplier') == '1' and 'limelight' in supplier.lower():
                         URL.append([int(bitrate),url])
+        '''
 
     if subtitles:
         data = get(subtitles)
@@ -672,11 +675,17 @@ def play_episode(url,name,thumbnail,action):
 
     if action == "autoplay":
         URL=max(URL)[1]
+        log(URL)
+        item = ListItem(label=name,icon=thumbnail,path=URL)
+        '''
         item =  {
             'label': name,
             'path': URL,
             'thumbnail': thumbnail
         }
+        '''
+        item.set_property('inputstreamaddon', 'inputstream.adaptive')
+        item.set_property('inputstream.adaptive.manifest_type', 'hls')
         if subtitles and plugin.get_setting('subtitles') == 'true':
             plugin.set_resolved_url(item,'special://profile/addon_data/plugin.video.bbc/subtitles.srt')
         else:
