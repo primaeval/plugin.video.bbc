@@ -825,20 +825,27 @@ def page(url):
     big_list_view = True
     headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
     html = get(url)
+    log(html)
 
     items = []
     html_items=html.split('data-ip-id="')
     for p in html_items:
+        log(p)
         IPID=p.split('"')[0]
         urls=re.compile('href="(.+?)"').findall (p)
 
         episode_url = ''
         episodes_url = ''
         for u in urls:
+            log(u)
             if u.startswith('/iplayer/episode/'):
                 episode_url = 'http://www.bbc.co.uk%s' % u
             elif u.startswith('/iplayer/episodes/'):
                 episodes_url = 'http://www.bbc.co.uk%s' % u
+            elif u.startswith('http://www.bbc.co.uk/iplayer/episode/'):
+                episode_url = u
+            elif u.startswith('http://www.bbc.co.uk/iplayer/episodes/'):
+                episodes_url = u
 
         name = re.compile('title="(.+?)"').findall (p)[0]
 
