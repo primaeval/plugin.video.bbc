@@ -402,7 +402,7 @@ def live_list(url,name,thumbnail):
 def proxy_play_episode(url,name,thumbnail,action):
     html = get(url)
     vpid = ''
-    match = re.search(r'mediator.bind\((.*?), document\.getElementById\(\'tviplayer\'\)\);', html, re.DOTALL)
+    match = re.search(r'window\.mediatorDefer\=page\(document\.getElementById\(\"tviplayer\"\),(.*?)\);', html, re.DOTALL)
     if match:
         data = match.group(1)
         import json
@@ -544,7 +544,7 @@ def play_episode(url,name,thumbnail,action):
     if not html:
         return
     vpid = ''
-    match = re.search(r'mediator.bind\((.*?), document\.getElementById\(\'tviplayer\'\)\);', html, re.DOTALL)
+    match = re.search(r'window\.mediatorDefer\=page\(document\.getElementById\(\"tviplayer\"\),(.*?)\);', html, re.DOTALL)
     if match:
         data = match.group(1)
         import json
