@@ -825,19 +825,16 @@ def page(url):
     big_list_view = True
     headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
     html = get(url)
-    log(html)
 
     items = []
     html_items=html.split('data-ip-id="')
     for p in html_items:
-        log(p)
         IPID=p.split('"')[0]
         urls=re.compile('href="(.+?)"').findall (p)
 
         episode_url = ''
         episodes_url = ''
         for u in urls:
-            log(u)
             if u.startswith('/iplayer/episode/'):
                 episode_url = 'http://www.bbc.co.uk%s' % u
             elif u.startswith('/iplayer/episodes/'):
@@ -1118,7 +1115,6 @@ def pvr_list():
             })
     return items
 
-
 @plugin.route('/categories')
 def categories():
     url = 'http://www.bbc.co.uk/iplayer'
@@ -1127,7 +1123,7 @@ def categories():
     match = re.compile(
         '<a href="(.*?/iplayer/categories/.+?)".*?>(.+?)</a>'
         ).findall(html)
-    log(match)
+
     items = []
     if plugin.get_setting('categories') == '0':
         order = "atoz"
@@ -1145,6 +1141,61 @@ def categories():
             'label': "%s" % unescape(name),
             'path': plugin.url_for('page',url=url),
             'thumbnail':get_icon_path('lists'),
+        })
+    return items    
+
+@plugin.route('/highlights/<url>')
+def highlights(url):
+    #url = 'http://www.bbc.co.uk/iplayer'
+    headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
+    html = get(url)
+    match = re.compile(
+        'href="(.*?/episode/.+?)"'
+        ).findall(html)
+    #log(match)
+    items = []
+    if plugin.get_setting('autoplay') == 'true':
+        autoplay = True
+        action = "autoplay"
+    else:
+        autoplay = False
+        action = "list"    
+    for episode_url in match:
+        if episode_url.startswith('/iplayer'):
+            episode_url = 'http://www.bbc.co.uk' + episode_url 
+        title = episode_url.split('/')[-1].split('#')[0]
+        title = title.replace('-',' ').title()
+        url = plugin.url_for('play_episode',url=episode_url,name=title,thumbnail=get_icon_path('lists'),action=action)
+        items.append({
+            'label': title,
+            'path': url,
+            'thumbnail':get_icon_path('lists'),
+            'is_playable' : autoplay,            
+        })
+    
+    return sorted(items, key=lambda x: x['label'])
+    
+@plugin.route('/channel_highlights')
+def channel_highlights():   
+    items = []
+    channel_list = [
+        ('bbcone',           'bbc_one_hd',              'BBC One'),
+        ('bbctwo',           'bbc_two_hd',              'BBC Two'),
+        ('tv/bbcthree',      'bbc_three_hd',          'BBC Three'),
+        ('bbcfour',          'bbc_four_hd',            'BBC Four'),
+        ('tv/cbbc',          'cbbc_hd',                    'CBBC'),
+        ('tv/cbeebies',      'cbeebies_hd',            'CBeebies'),
+        ('tv/bbcnews',       'bbc_news24',     'BBC News Channel'),
+        ('tv/bbcparliament', 'bbc_parliament',   'BBC Parliament'),
+        ('tv/bbcalba',       'bbc_alba',                   'Alba'),
+        ('tv/s4c',           's4cpbs',                      'S4C'),
+    ]
+    for id, img, name in channel_list:
+        iconimage = get_icon_path(img)
+        items.append({
+            'label': name,
+            'path': plugin.url_for('highlights',url='http://www.bbc.co.uk/' + id),
+            'thumbnail':iconimage,
         })
     return items
 
@@ -1198,12 +1249,14 @@ def index():
     context_items = []
     context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'PVR Service', 'XBMC.RunPlugin(%s)' %
     (plugin.url_for('start_pvr_service'))))
+    xbmc_version = float(xbmc.getInfoLabel( "System.BuildVersion" ).split()[0])
+    
     items = [
     {
         'label': 'Live',
         'path': plugin.url_for('live'),
         'thumbnail':get_icon_path('tv'),
-    },
+    }]
     #{
     #    'label': 'Red Button',
     #    'path': plugin.url_for('red_button'),
@@ -1214,48 +1267,58 @@ def index():
     #    'path': plugin.url_for('schedules'),
     #    'thumbnail':get_icon_path('tv'),
     #},
-    {
+    if xbmc_version > 17.0:
+        items.append({
+            'label': 'Highlights',
+            'path': plugin.url_for('highlights',url='https://www.bbc.co.uk/iplayer'),
+            'thumbnail':get_icon_path('top'),
+        })
+    items.append({
+        'label': 'Channel Highlights',
+        'path': plugin.url_for('channel_highlights'),
+        'thumbnail':get_icon_path('top'),
+    })
+    items.append({
         'label': 'Most Popular',
         'path': plugin.url_for('page',url='http://www.bbc.co.uk/iplayer/group/most-popular'),
         'thumbnail':get_icon_path('top'),
-    },
-    {
+    })
+    items.append({
         'label': 'Search',
         'path': plugin.url_for('searches'),
         'thumbnail':get_icon_path('search'),
-    },
-    {
+    })
+    items.append({
         'label': 'A-Z',
         'path': plugin.url_for('alphabet'),
         'thumbnail':get_icon_path('lists'),
-    },
+    })
     #{
     #    'label': 'Channel A-Z',
     #    'path': plugin.url_for('channel_a_z'),
     #    'thumbnail':get_icon_path('lists'),
     #},
-    {
+    items.append({
         'label': 'Categories',
         'path': plugin.url_for('categories'),
         'thumbnail':get_icon_path('lists'),
-    },
-    {
+    })
+    items.append({
         'label': 'Favourites',
         'path': plugin.url_for('favourites'),
         'thumbnail':get_icon_path('favourites'),
-    },
-    {
+    })
+    items.append({
         'label': 'PVR',
         'path': plugin.url_for('pvr_list'),
         'thumbnail':get_icon_path('clock'),
         'context_menu': context_items,
-    },
-    {
+    })
+    items.append({
         'label': 'Make Live Playlist',
         'path': plugin.url_for('make_playlist'),
         'thumbnail':get_icon_path('settings'),
-    },
-    ]
+    })
     if plugin.get_setting('mpd') == 'true':
         item = {
             'label': 'Live MPD',
