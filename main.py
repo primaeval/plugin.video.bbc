@@ -17,7 +17,7 @@ plugin = Plugin()
 big_list_view = False
 
 def log(v):
-    xbmc.log(repr(v))
+    xbmc.log(repr(v),xbmc.LOGERROR)
 
 def get_icon_path(icon_name):
     addon_path = xbmcaddon.Addon().getAddonInfo("path")
@@ -831,7 +831,7 @@ def page(url):
     for p in html_items:
         IPID=p.split('"')[0]
         urls=re.compile('href="(.+?)"').findall (p)
-
+        #log(urls)
         episode_url = ''
         episodes_url = ''
         for u in urls:
@@ -1142,7 +1142,7 @@ def categories():
             'path': plugin.url_for('page',url=url),
             'thumbnail':get_icon_path('lists'),
         })
-    return items    
+    return items
 
 @plugin.route('/highlights/<url>')
 def highlights(url):
@@ -1150,19 +1150,18 @@ def highlights(url):
     headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
     html = get(url)
     match = re.compile(
-        'href="(.*?/episode/.+?)"'
+        'href="(/iplayer/episode/.*?)"'
         ).findall(html)
-    #log(match)
     items = []
     if plugin.get_setting('autoplay') == 'true':
         autoplay = True
         action = "autoplay"
     else:
         autoplay = False
-        action = "list"    
+        action = "list"
     for episode_url in match:
         if episode_url.startswith('/iplayer'):
-            episode_url = 'http://www.bbc.co.uk' + episode_url 
+            episode_url = 'https://www.bbc.co.uk' + episode_url
         title = episode_url.split('/')[-1].split('#')[0]
         title = title.replace('-',' ').title()
         url = plugin.url_for('play_episode',url=episode_url,name=title,thumbnail=get_icon_path('lists'),action=action)
@@ -1170,13 +1169,13 @@ def highlights(url):
             'label': title,
             'path': url,
             'thumbnail':get_icon_path('lists'),
-            'is_playable' : autoplay,            
+            'is_playable' : autoplay,
         })
-    
+
     return sorted(items, key=lambda x: x['label'])
-    
+
 @plugin.route('/channel_highlights')
-def channel_highlights():   
+def channel_highlights():
     items = []
     channel_list = [
         ('bbcone',           'bbc_one_hd',              'BBC One'),
@@ -1250,7 +1249,7 @@ def index():
     context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'PVR Service', 'XBMC.RunPlugin(%s)' %
     (plugin.url_for('start_pvr_service'))))
     xbmc_version = float(xbmc.getInfoLabel( "System.BuildVersion" ).split()[0])
-    
+
     items = [
     {
         'label': 'Live',
@@ -1280,7 +1279,7 @@ def index():
     })
     items.append({
         'label': 'Most Popular',
-        'path': plugin.url_for('page',url='http://www.bbc.co.uk/iplayer/group/most-popular'),
+        'path': plugin.url_for('highlights',url='https://www.bbc.co.uk/iplayer/group/most-popular'),
         'thumbnail':get_icon_path('top'),
     })
     items.append({
