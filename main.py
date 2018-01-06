@@ -409,8 +409,14 @@ def proxy_play_episode(url,name,thumbnail,action):
         json_data = json.loads(data)
         # print json.dumps(json_data, indent=2, sort_keys=True)
         name = json_data['episode']['title']
-        description = json_data['episode']['synopses']['large']
-        image = json_data['episode']['images']['standard'].replace('{recipe}','832x468')
+        try:
+            description = json_data['episode']['synopses']['large']
+        except:
+            description = ''
+        try:
+            image = json_data['episode']['images']['standard'].replace('{recipe}','832x468')
+        except:
+            image = ''
         for stream in json_data['episode']['versions']:
             if ((stream['kind'] == 'original') or
                (stream['kind'] == 'iplayer-version')):
