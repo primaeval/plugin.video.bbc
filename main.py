@@ -490,41 +490,9 @@ def cache_all(url):
             elif u.startswith('/iplayer/episodes/'):
                 episodes_url = 'http://www.bbc.co.uk%s' % u
 
-        name = re.compile('title="(.+?)"').findall (p)[0]
-
-        series = 0
-        episode = None
-        match = re.compile('Episode ([0-9]*)$').search (name)
-        if match:
-            episode = int(match.group(1))
-        else:
-            match = re.compile('Series ([0-9]*): ([0-9]*)\.').search (name)
-            if match:
-                series = int(match.group(1))
-                episode = int(match.group(2))
-            else:
-                match = re.compile(', ([0-9]*)\.').search (name)
-                if match:
-                    episode = int(match.group(1))
-        group = ''
-        match=re.compile('top-title">(.+?)<').findall (p)
-        if match:
-            group = match[0]
-
-        iconimage = get_icon_path('tv')
-        match=re.compile('img src="(.+?)"').findall (p)
-        if match:
-            iconimage = match[0]
-        else:
-            match=re.compile('srcset="(.+?)"').findall (p)
-            if match:
-                iconimage = match[0]
-
-        if episode:
-            label = "%s S%03dE%03d" % (name,series,episode)
-            label = re.sub('[%s]' % re.escape(':\/?*><|'),'',label)
-            #log((episode_url,label,iconimage))
-            play_episode(episode_url,label,iconimage,"cache")
+        if episode_url:
+            title = episode_url.split('/')[-1]
+            play_episode(episode_url,title,"DefaultVideo.png","cache")
 
 
     next_page = re.compile('<span class="next.*?href="(.*?)"',flags=(re.DOTALL | re.MULTILINE)).search (html)
