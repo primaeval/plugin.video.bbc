@@ -401,12 +401,15 @@ def live_list(url,name,thumbnail):
 @plugin.route('/proxy_play_episode/<url>/<name>/<thumbnail>/<action>')
 def proxy_play_episode(url,name,thumbnail,action):
     html = get(url)
+    log(html)
     vpid = ''
     match = re.search(r'window\.mediatorDefer\=page\(document\.getElementById\(\"tviplayer\"\),(.*?)\);', html, re.DOTALL)
+    log(match)
     if match:
         data = match.group(1)
         import json
         json_data = json.loads(data)
+        log(json_data)
         # print json.dumps(json_data, indent=2, sort_keys=True)
         name = json_data['episode']['title']
         try:
@@ -417,11 +420,15 @@ def proxy_play_episode(url,name,thumbnail,action):
             image = json_data['episode']['images']['standard'].replace('{recipe}','832x468')
         except:
             image = ''
+        stream_ids = []
         for stream in json_data['episode']['versions']:
+            #log(stream['kind'])
+            stream_ids.append(stream['id'])
             if ((stream['kind'] == 'original') or
                (stream['kind'] == 'iplayer-version')):
                 vpid = stream_id_st = stream['id']
-
+        if not vpid and stream_ids:
+            vpid = stream_ids[0]
     if not vpid:
         return
 
