@@ -665,9 +665,9 @@ def play_episode(url,name,thumbnail,action):
                         text = text.replace('<br />','\n')
                         text = text.replace('  ','\n')
                         text = re.compile('<[^>]*>').sub('',text)
-                    f.write(str(i)+'\n')
-                    f.write("%s --> %s\n" % (begin,end))
-                    f.write(text+'\n\n')
+                        f.write(str(i)+'\n')
+                        f.write("%s --> %s\n" % (begin,end))
+                        f.write(text+'\n\n')
             f.close()
 
     if action == "autoplay":
