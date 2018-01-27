@@ -45,11 +45,11 @@ def unescape( str ):
     return str
 
 def get(url,proxy=False):
-    headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
+    headers = {'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3'}
     if proxy:
-        headers['Referer'] = 'http://www.justproxy.co.uk/'
-        url = 'http://www.justproxy.co.uk/index.php?q=%s' % base64.b64encode(url)
-    #log(url)
+        headers['Referer'] = 'https://www.justproxy.co.uk/'
+        url = 'https://www.justproxy.co.uk/index.php?q=%s' % base64.b64encode(url)
+    #log(("PPP",url))
     try:
         #log(("GGG",url))
         r = requests.get(url,headers=headers,verify=False)
@@ -60,6 +60,12 @@ def get(url,proxy=False):
     html = r.content
     #log(html)
     return html
+
+def what_play_episode():
+    if plugin.get_setting('proxy') == 'true':
+        return 'proxy_play_episode'
+    else:
+        return 'play_episode'
 
 @plugin.route('/reset_cached')
 def reset_cached():
@@ -111,7 +117,7 @@ def schedule(url,name):
             thumbnail = 'https://ichef.bbci.co.uk/images/ic/336x189/%s.jpg' % image_pid
             play_name = "%s %s" % (title,subtitle)
             if is_available == "1":
-                URL = plugin.url_for('play_episode',url=episode_url,name=play_name,thumbnail=thumbnail,action=action)
+                URL = plugin.url_for(what_play_episode(),url=episode_url,name=play_name,thumbnail=thumbnail,action=action)
                 NAME = "[COLOR %s]%s[/COLOR]" % (remove_formatting(plugin.get_setting('catchup.colour')),NAME)
             else:
                 URL = plugin.url_for('schedule',url=url, name=name)
@@ -121,7 +127,7 @@ def schedule(url,name):
             context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add to PVR', 'XBMC.RunPlugin(%s)' %
             (plugin.url_for(add_pvr, name=play_name, url=episode_url, thumbnail=thumbnail, is_episode=True))))
             context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Cache', 'XBMC.RunPlugin(%s)' %
-            (plugin.url_for('play_episode',url=episode_url,name=play_name,thumbnail=thumbnail,action="cache"))))
+            (plugin.url_for(what_play_episode(),url=episode_url,name=play_name,thumbnail=thumbnail,action="cache"))))
             items.append({
                 'label' : NAME,
                 'thumbnail' : thumbnail,
@@ -401,15 +407,15 @@ def live_list(url,name,thumbnail):
 @plugin.route('/proxy_play_episode/<url>/<name>/<thumbnail>/<action>')
 def proxy_play_episode(url,name,thumbnail,action):
     html = get(url)
-    log(html)
+    #log(html)
     vpid = ''
     match = re.search(r'window\.mediatorDefer\=page\(document\.getElementById\(\"tviplayer\"\),(.*?)\);', html, re.DOTALL)
-    log(match)
+    #log(match)
     if match:
         data = match.group(1)
         import json
         json_data = json.loads(data)
-        log(json_data)
+        #log(json_data)
         # print json.dumps(json_data, indent=2, sort_keys=True)
         name = json_data['episode']['title']
         try:
@@ -433,29 +439,51 @@ def proxy_play_episode(url,name,thumbnail,action):
         return
 
     NEW_URL= "http://open.live.bbc.co.uk/mediaselector/5/select/version/2.0/mediaset/apple-ipad-hls/vpid/%s" % vpid
+    #log(("NNN",NEW_URL))
     html = get(NEW_URL,True)
     urls = []
     match=re.compile('application="(.+?)".+?String="(.+?)".+?identifier="(.+?)".+?protocol="(.+?)".+?server="(.+?)".+?supplier="(.+?)"').findall(html.replace('amp;',''))
     for app,auth , playpath ,protocol ,server,supplier in match:
-
+        #log((app,auth , playpath ,protocol ,server,supplier))
         port = '1935'
         if protocol == 'rtmpt': port = 80
         if supplier == 'limelight':
-            url="%s://%s:%s/ app=%s?%s tcurl=%s://%s:%s/%s?%s playpath=%s" % (protocol,server,port,app,auth,protocol,server,port,app,auth,playpath)
+            uurl="%s://%s:%s/ app=%s?%s tcurl=%s://%s:%s/%s?%s playpath=%s" % (protocol,server,port,app,auth,protocol,server,port,app,auth,playpath)
             res = playpath.split('secure_auth/')[1]
             res = res.split('kbps')[0]
-            urls.append([url,res])
+            urls.append([uurl,res])
+            #log(uurl)
+            if uurl.startswith('rtmp') and action != "cache":
+                plugin.set_resolved_url(uurl)
+                return
 
     items = []
-    for url,res in sorted(urls,key = lambda x: int(x[1]), reverse=True):
+
+    for uurl,res in sorted(urls,key = lambda x: int(x[1]), reverse=True):
 
         items.append({
             'label': "%s [%s kbps]" % (name, res),
-            'path': url,
+            'path': uurl,
             'thumbnail': thumbnail,
             'is_playable': True
         })
 
+
+    if action == "cache":
+        urls = sorted(urls,key = lambda x: int(x[1]), reverse=True)
+        uurl = urls[0][0]
+        cached = plugin.get_storage('cached')
+        filename = url.split('/')[-1]
+        if filename in cached:
+            return
+        basename = '%s%s' % (plugin.get_setting('cache'), filename)
+        cached[filename] = datetime.datetime.now()
+        import subprocess
+        cmd = [r"ffmpeg","-i",uurl,"-c", "copy",xbmc.translatePath("%s.ts" % basename)]
+        #log(cmd)
+        subprocess.Popen(cmd,shell=True)
+
+    #log(items)
     return items
 
 @plugin.route('/start_pvr_service')
@@ -478,7 +506,10 @@ def pvr_service():
             cache_all(url)
         else:
             #log((url,name))
-            play_episode(url,name,iconimage,"cache")
+            if plugin.get_setting('proxy') == 'true':
+                play_episode(url,name,iconimage,"cache")
+            else:
+                proxy_play_episode(url,name,iconimage,"cache")
 
 
 @plugin.route('/cache_all/<url>')
@@ -505,7 +536,10 @@ def cache_all(url):
 
         if episode_url:
             title = episode_url.split('/')[-1]
-            play_episode(episode_url,title,"DefaultVideo.png","cache")
+            if plugin.get_setting('proxy') == 'true':
+                play_episode(episode_url,title,"DefaultVideo.png","cache")
+            else:
+                proxy_play_episode(episode_url,title,"DefaultVideo.png","cache")
 
 
     next_page = re.compile('<span class="next.*?href="(.*?)"',flags=(re.DOTALL | re.MULTILINE)).search (html)
@@ -891,17 +925,15 @@ def page(url):
         context_items = []
         if episode_url:
             name = unescape(name)
-            if plugin.get_setting('proxy') == 'true':
-                url = plugin.url_for('proxy_play_episode',url=episode_url,name=name,thumbnail=iconimage,action=action)
-                autoplay = False
-            else:
-                url = plugin.url_for('play_episode',url=episode_url,name=name,thumbnail=iconimage,action=action)
+            url = plugin.url_for(what_play_episode(),url=episode_url,name=name,thumbnail=iconimage,action=action)
             context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add Favourite', 'XBMC.RunPlugin(%s)' %
             (plugin.url_for(add_favourite, name=name, url=episode_url, thumbnail=iconimage, is_episode=True))))
             context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add to PVR', 'XBMC.RunPlugin(%s)' %
             (plugin.url_for(add_pvr, name=name, url=episode_url, thumbnail=iconimage, is_episode=True))))
-            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Cache', 'XBMC.RunPlugin(%s)' %
-            (plugin.url_for('play_episode',url=episode_url,name=name,thumbnail=iconimage,action="cache"))))
+
+            cache_url = plugin.url_for(what_play_episode(),url=episode_url,name=name,thumbnail=iconimage,action="cache")
+
+            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Cache', 'XBMC.RunPlugin(%s)' % (cache_url)))
             items.append({
                 'label': name,
                 'path': url,
@@ -1036,10 +1068,10 @@ def favourites():
         (plugin.url_for(remove_favourite, name=name))))
         if is_episode == "True":
             context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Cache', 'XBMC.RunPlugin(%s)' %
-            (plugin.url_for('play_episode',url=url,name=name,thumbnail=iconimage,action="cache"))))
+            (plugin.url_for(what_play_episode(),url=url,name=name,thumbnail=iconimage,action="cache"))))
             items.append({
                 'label': unescape(name),
-                'path': plugin.url_for('play_episode',url=url,name=name,thumbnail=iconimage,action=action),
+                'path': plugin.url_for(what_play_episode(),url=url,name=name,thumbnail=iconimage,action=action),
                 'thumbnail':iconimage,
                 'is_playable' : autoplay,
                 'context_menu': context_items,
@@ -1076,10 +1108,10 @@ def pvr_list():
         (plugin.url_for(remove_pvr, name=name))))
         if is_episode == "True":
             context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Cache', 'XBMC.RunPlugin(%s)' %
-            (plugin.url_for('play_episode',url=url,name=name,thumbnail=iconimage,action="cache"))))
+            (plugin.url_for(what_play_episode(),url=url,name=name,thumbnail=iconimage,action="cache"))))
             items.append({
                 'label': unescape(name),
-                'path': plugin.url_for('play_episode',url=url,name=name,thumbnail=iconimage,action=action),
+                'path': plugin.url_for(what_play_episode(),url=url,name=name,thumbnail=iconimage,action=action),
                 'thumbnail':iconimage,
                 'is_playable' : autoplay,
                 'context_menu': context_items,
@@ -1145,7 +1177,8 @@ def highlights(url):
             episode_url = 'https://www.bbc.co.uk' + episode_url
         title = episode_url.split('/')[-1].split('#')[0]
         title = title.replace('-',' ').title()
-        url = plugin.url_for('play_episode',url=episode_url,name=title,thumbnail=get_icon_path('lists'),action=action)
+        url = plugin.url_for(what_play_episode(),url=episode_url,name=title,thumbnail=get_icon_path('lists'),action=action)
+        #log(episode_url)
         items.append({
             'label': title,
             'path': url,
