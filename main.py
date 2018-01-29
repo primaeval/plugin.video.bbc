@@ -479,7 +479,7 @@ def proxy_play_episode(url,name,thumbnail,action):
         basename = '%s%s' % (plugin.get_setting('cache'), filename)
         cached[filename] = datetime.datetime.now()
         import subprocess
-        cmd = [r"ffmpeg","-i",uurl,"-c", "copy",xbmc.translatePath("%s.ts" % basename)]
+        cmd = [plugin.get_setting('ffmpeg'),"-i",uurl,"-c", "copy",xbmc.translatePath("%s.ts" % basename)]
         #log(cmd)
         subprocess.Popen(cmd,shell=True)
 
