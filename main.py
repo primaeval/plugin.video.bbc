@@ -484,7 +484,11 @@ def proxy_play_episode(url,name,thumbnail,action):
         import subprocess
         cmd = [plugin.get_setting('ffmpeg'),"-i",uurl,"-c", "copy",xbmc.translatePath("%s.ts" % basename)]
         #log(cmd)
-        subprocess.Popen(cmd,shell=True)
+        if sys.platform == "win32":
+            shell = True
+        else:
+            shell = False
+        subprocess.Popen(cmd,shell=shell)
 
     #log(items)
     return items
