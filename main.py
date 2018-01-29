@@ -449,6 +449,8 @@ def proxy_play_episode(url,name,thumbnail,action):
         port = '1935'
         if protocol == 'rtmpt': port = 80
         if supplier == 'limelight':
+            import socket
+            server = socket.gethostbyname(server)
             uurl="%s://%s:%s/ app=%s?%s tcurl=%s://%s:%s/%s?%s playpath=%s" % (protocol,server,port,app,auth,protocol,server,port,app,auth,playpath)
             res = playpath.split('secure_auth/')[1]
             res = res.split('kbps')[0]
