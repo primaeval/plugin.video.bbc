@@ -406,6 +406,7 @@ def live_list(url,name,thumbnail):
 
 @plugin.route('/proxy_play_episode/<url>/<name>/<thumbnail>/<action>')
 def proxy_play_episode(url,name,thumbnail,action):
+    #log(("EEE",url))
     html = get(url)
     #log(html)
     vpid = ''
@@ -505,8 +506,8 @@ def pvr_service():
             #log(url)
             cache_all(url)
         else:
-            #log((url,name))
-            if plugin.get_setting('proxy') == 'true':
+            #log(("PPP",url,name))
+            if plugin.get_setting('proxy') == 'false':
                 play_episode(url,name,iconimage,"cache")
             else:
                 proxy_play_episode(url,name,iconimage,"cache")
@@ -536,7 +537,7 @@ def cache_all(url):
 
         if episode_url:
             title = episode_url.split('/')[-1]
-            if plugin.get_setting('proxy') == 'true':
+            if plugin.get_setting('proxy') == 'false':
                 play_episode(episode_url,title,"DefaultVideo.png","cache")
             else:
                 proxy_play_episode(episode_url,title,"DefaultVideo.png","cache")
