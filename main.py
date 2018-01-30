@@ -488,7 +488,10 @@ def proxy_play_episode(url,name,thumbnail,action):
             shell = True
         else:
             shell = False
-            subprocess.Popen(["chmod","+x",plugin.get_setting('ffmpeg')],shell=shell)
+            try:
+                subprocess.Popen(["chmod","+x",plugin.get_setting('ffmpeg')],shell=shell)
+            except:
+                pass
         subprocess.Popen(cmd,shell=shell)
 
     #log(items)
