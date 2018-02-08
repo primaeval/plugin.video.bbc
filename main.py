@@ -811,7 +811,7 @@ def letter(letter):
         (plugin.url_for(add_pvr, name=name, url=url, thumbnail=thumbnail, is_episode=False))))
         items.append({
             'label': unescape(name),
-            'path': plugin.url_for('page',url=url),
+            'path': plugin.url_for('page2',url=url),
             'thumbnail':thumbnail,
             'context_menu': context_items,
         })
@@ -846,7 +846,7 @@ def channel_a_z():
 
 
 @plugin.route('/page/<url>')
-def page(url):
+def page2(url):
     global big_list_view
     big_list_view = True
     headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
@@ -912,148 +912,14 @@ def page(url):
             'context_menu': context_items,
             #'info': {'aired':aired, 'plot':unescape(plot), 'episode': episode},
         })
-    '''
-    html_items=html.split('data-ip-id="')
-    for p in html_items:
-        IPID=p.split('"')[0]
-        urls=re.compile('href="(.+?)"').findall (p)
-        #log(urls)
-        episode_url = ''
-        episodes_url = ''
-        for u in urls:
-            if u.startswith('/iplayer/episode/'):
-                episode_url = 'http://www.bbc.co.uk%s' % u
-            elif u.startswith('/iplayer/episodes/'):
-                episodes_url = 'http://www.bbc.co.uk%s' % u
-            elif u.startswith('http://www.bbc.co.uk/iplayer/episode/'):
-                episode_url = u
-            elif u.startswith('http://www.bbc.co.uk/iplayer/episodes/'):
-                episodes_url = u
 
-        name = re.compile('title="(.+?)"').findall (p)[0]
-
-        episode = None
-        match = re.compile('Episode ([0-9]*)$').search (name)
-        if match:
-            episode = int(match.group(1))
-        else:
-            match = re.compile('Series [0-9]*: ([0-9]*)\.').search (name)
-            if match:
-                episode = int(match.group(1))
-            else:
-                match = re.compile(', ([0-9]*)\.').search (name)
-                if match:
-                    episode = int(match.group(1))
-        group = ''
-        match=re.compile('top-title">(.+?)<').findall (p)
-        if match:
-            group = match[0]
-
-        iconimage = get_icon_path('tv')
-        match=re.compile('img src="(.+?)"').findall (p)
-        if match:
-            iconimage = match[0]
-        else:
-            match=re.compile('srcset="(.+?)"').findall (p)
-            if match:
-                iconimage = match[0]
-
-        day = ''
-        month = ''
-        year = ''
-        match=re.compile('First shown: (.*?) (.*?) (.*)').search (p)
-        if match:
-            day = match.group(1)
-            month = match.group(2)
-            year = match.group(3)
-        else:
-            match=re.compile('First shown: (.*)').search (p)
-            if match:
-                day = "1"
-                month = "Jan"
-                year = match.group(1)
-
-        aired = ''
-        if month:
-            monthDict={
-                'Jan':'01', 'Feb':'02', 'Mar':'03', 'Apr':'04', 'May':'05', 'Jun':'06',
-                'Jul':'07', 'Aug':'08', 'Sep':'09', 'Oct':'10', 'Nov':'11', 'Dec':'12'}
-            if month in monthDict:
-                month = monthDict[month]
-            aired = year + '-' + month + '-' + day
-
-        plot = ''
-        match=re.compile('<p class="synopsis">(.+?)</p>').findall (p)
-        if match:
-            plot = match[0]
-
-        if plugin.get_setting('autoplay') == 'true':
-            autoplay = True
-            action = "autoplay"
-        else:
-            autoplay = False
-            action = "list"
-        context_items = []
-        if episode_url:
-            name = unescape(name)
-            url = plugin.url_for(what_play_episode(),url=episode_url,name=name,thumbnail=iconimage,action=action)
-            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add Favourite', 'XBMC.RunPlugin(%s)' %
-            (plugin.url_for(add_favourite, name=name, url=episode_url, thumbnail=iconimage, is_episode=True))))
-            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add to PVR', 'XBMC.RunPlugin(%s)' %
-            (plugin.url_for(add_pvr, name=name, url=episode_url, thumbnail=iconimage, is_episode=True))))
-
-            cache_url = plugin.url_for(what_play_episode(),url=episode_url,name=name,thumbnail=iconimage,action="cache")
-
-            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Cache', 'XBMC.RunPlugin(%s)' % (cache_url)))
-            items.append({
-                'label': name,
-                'path': url,
-                'thumbnail':iconimage,
-                'is_playable' : autoplay,
-                'context_menu': context_items,
-                'info': {'aired':aired, 'plot':unescape(plot), 'episode': episode},
-            })
-        context_items = []
-        if episodes_url:
-            name = unescape(group)
-            url = plugin.url_for('page',url=episodes_url)
-            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add Favourite', 'XBMC.RunPlugin(%s)' %
-            (plugin.url_for(add_favourite, name=name, url=episodes_url, thumbnail=iconimage, is_episode=False))))
-            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add to PVR', 'XBMC.RunPlugin(%s)' %
-            (plugin.url_for(add_pvr, name=name, url=episodes_url, thumbnail=iconimage, is_episode=False))))
-            context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Cache All', 'XBMC.RunPlugin(%s)' %
-            (plugin.url_for('cache_all',url=episodes_url))))
-            items.append({
-                'label': "[COLOR %s][B]%s[/B][/COLOR]" % (remove_formatting(plugin.get_setting('group.colour')),name),
-                'path': url,
-                'thumbnail':iconimage,
-                'context_menu': context_items,
-            })
-
-    next_page = re.compile('<span class="next.*?href="(.*?)"',flags=(re.DOTALL | re.MULTILINE)).search (html)
-    if next_page:
-        url = 'http://www.bbc.co.uk%s' % unescape(next_page.group(1))
-        if 'page=' in url:
-            if plugin.get_setting('page') == 'true' and "search" not in url:
-                number = url.split('page=')[-1]
-                if int(number) > 5:
-                    xbmcgui.Dialog().notification("BBC TV","Page "+number,time=100,sound=False)
-                items = items + page(url)
-            else:
-                url = plugin.url_for('page',url=url)
-                items.append({
-                    'label': "[COLOR orange]Next Page >>[/COLOR]",
-                    'path': url,
-                    'thumbnail':get_icon_path("item_next"),
-                })
-    '''
     plugin.set_content('episodes')
     #BUG date doesn't work
     #return plugin.finish(items, sort_methods=['playlist_order','label','date'])
     return items
     
 @plugin.route('/page1/<url>')
-def page1(url):
+def page(url):
     global big_list_view
     big_list_view = True
     headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
@@ -1163,7 +1029,7 @@ def page1(url):
         context_items = []
         if episodes_url:
             name = unescape(group)
-            url = plugin.url_for('page',url=episodes_url)
+            url = plugin.url_for('page2',url=episodes_url)
             context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add Favourite', 'XBMC.RunPlugin(%s)' %
             (plugin.url_for(add_favourite, name=name, url=episodes_url, thumbnail=iconimage, is_episode=False))))
             context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add to PVR', 'XBMC.RunPlugin(%s)' %
@@ -1340,7 +1206,7 @@ def pvr_list():
             (plugin.url_for('cache_all',url=url))))
             items.append({
                 'label': "[COLOR %s][B]%s[/B][/COLOR]" % (remove_formatting(plugin.get_setting('group.colour')),unescape(name)),
-                'path': plugin.url_for('page',url=url),
+                'path': plugin.url_for('page2',url=url),
                 'thumbnail':iconimage,
                 'is_playable' : False,
                 'context_menu': context_items,
