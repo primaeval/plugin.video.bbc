@@ -851,7 +851,7 @@ def page2(url):
     big_list_view = True
     headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
     html = get(url)
-    log(html)
+   #log(html)
     if plugin.get_setting('autoplay') == 'true':
         autoplay = True
         action = "autoplay"
@@ -863,14 +863,14 @@ def page2(url):
     items = []
     
     episode= re.findall('href="(/iplayer/episode/.+?)"', html)
-    log(episode)
+   #log(episode)
     episodes= re.findall('href="(/iplayer/episodes/.+?)"', html)
-    log(episodes)
+   #log(episodes)
     #return
     for url in episodes:
         if not url.startswith('http'):
             url = "http://www.bbc.co.uk"+url
-        log(url)
+       #log(url)
         name = url.rsplit('/',1)[-1]
         name = name.replace('-',' ').title()
         name = "[B]"+name+"[/B]"
@@ -893,7 +893,7 @@ def page2(url):
     for url in episode:
         if not url.startswith('http'):
             url = "http://www.bbc.co.uk"+url
-        log(url)
+       #log(url)
         name = url.rsplit('/',1)[-1]
         name = name.replace('-',' ').title()
         
