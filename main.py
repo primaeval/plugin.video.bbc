@@ -45,6 +45,7 @@ def unescape( str ):
     return str
 
 def get(url,proxy=False):
+    url = unescape(url)
     headers = {'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3'}
     if proxy:
         headers['Referer'] = 'https://www.justproxy.co.uk/'
@@ -113,7 +114,7 @@ def schedule(url,name):
             else:
                 subtitle = "- %s" % subtitle
             NAME = "[COLOR dimgray]%s-%s[/COLOR] %s %s" % (start[11:16],end[11:16],title,subtitle)
-            episode_url = 'http://www.bbc.co.uk/iplayer/episode/%s' % pid
+            episode_url = 'https://www.bbc.co.uk/iplayer/episode/%s' % pid
             thumbnail = 'https://ichef.bbci.co.uk/images/ic/336x189/%s.jpg' % image_pid
             play_name = "%s %s" % (title,subtitle)
             if is_available == "1":
@@ -155,41 +156,41 @@ def schedule_period(url,name,thumbnail):
 @plugin.route('/schedules')
 def schedules():
     channels = [
-        ('bbc_one_hd', "BBC One", "http://www.bbc.co.uk/bbcone/programmes/schedules/hd/today.xml"),
-        ('bbc_two_hd', "BBC Two", "http://www.bbc.co.uk/bbctwo/programmes/schedules/hd/today.xml"),
-        ('bbc_four_hd', "BBC Four", "http://www.bbc.co.uk/bbcfour/programmes/schedules/today.xml"),
-        ('bbc_news24', "BBC News", "http://www.bbc.co.uk/bbcnews/programmes/schedules/today.xml"),
-        ('bbc_parliament', "BBC Parliament", "http://www.bbc.co.uk/bbcparliament/programmes/schedules/today.xml"),
-        ('cbbc_hd', "CBBC", "http://www.bbc.co.uk/cbbc/programmes/schedules/today.xml"),
-        ('cbeebies_hd', "CBeebies", "http://www.bbc.co.uk/cbeebies/programmes/schedules/today.xml"),
-        ('bbc_alba', "Alba", "http://www.bbc.co.uk/bbcalba/programmes/schedules/today.xml"),
-        ('s4cpbs', "S4C", "http://www.bbc.co.uk/s4c/programmes/schedules/today.xml"),
-        ('bbc_one_hd', "BBC One Cambridgeshire", "http://www.bbc.co.uk/bbcone/programmes/schedules/cambridge/today.xml"),
-        ('bbc_one_hd', "BBC One Channel Islands", "http://www.bbc.co.uk/bbcone/programmes/schedules/channel_islands/today.xml"),
-        ('bbc_one_hd', "BBC One East", "http://www.bbc.co.uk/bbcone/programmes/schedules/east/today.xml"),
-        ('bbc_one_hd', "BBC One East Midlands", "http://www.bbc.co.uk/bbcone/programmes/schedules/east_midlands/today.xml"),
-        ('bbc_one_hd', "BBC One Yorks & Lincs", "http://www.bbc.co.uk/bbcone/programmes/schedules/east_yorkshire/today.xml"),
-        ('bbc_one_hd', "BBC One HD", "http://www.bbc.co.uk/bbcone/programmes/schedules/hd/today.xml"),
-        ('bbc_one_hd', "BBC One London", "http://www.bbc.co.uk/bbcone/programmes/schedules/london/today.xml"),
-        ('bbc_one_hd', "BBC One Northern Ireland", "http://www.bbc.co.uk/bbcone/programmes/schedules/ni/today.xml"),
-        ('bbc_one_hd', "BBC One Northern Ireland HD", "http://www.bbc.co.uk/bbcone/programmes/schedules/ni_hd/today.xml"),
-        ('bbc_one_hd', "BBC One North East & Cumbria", "http://www.bbc.co.uk/bbcone/programmes/schedules/north_east/today.xml"),
-        ('bbc_one_hd', "BBC One North West", "http://www.bbc.co.uk/bbcone/programmes/schedules/north_west/today.xml"),
-        ('bbc_one_hd', "BBC One Oxfordshire", "http://www.bbc.co.uk/bbcone/programmes/schedules/oxford/today.xml"),
-        ('bbc_one_hd', "BBC One Scotland", "http://www.bbc.co.uk/bbcone/programmes/schedules/scotland/today.xml"),
-        ('bbc_one_hd', "BBC One Scotland HD", "http://www.bbc.co.uk/bbcone/programmes/schedules/scotland_hd/today.xml"),
-        ('bbc_one_hd', "BBC One South", "http://www.bbc.co.uk/bbcone/programmes/schedules/south/today.xml"),
-        ('bbc_one_hd', "BBC One South East", "http://www.bbc.co.uk/bbcone/programmes/schedules/south_east/today.xml"),
-        ('bbc_one_hd', "BBC One South West", "http://www.bbc.co.uk/bbcone/programmes/schedules/south_west/today.xml"),
-        ('bbc_one_hd', "BBC One Wales", "http://www.bbc.co.uk/bbcone/programmes/schedules/wales/today.xml"),
-        ('bbc_one_hd', "BBC One Wales HD", "http://www.bbc.co.uk/bbcone/programmes/schedules/wales_hd/today.xml"),
-        ('bbc_one_hd', "BBC One West", "http://www.bbc.co.uk/bbcone/programmes/schedules/west/today.xml"),
-        ('bbc_one_hd', "BBC One West Midlands", "http://www.bbc.co.uk/bbcone/programmes/schedules/west_midlands/today.xml"),
-        ('bbc_one_hd', "BBC One Yorkshire", "http://www.bbc.co.uk/bbcone/programmes/schedules/yorkshire/today.xml"),
-        ('bbc_two_hd', "BBC Two Wales", "http://www.bbc.co.uk/bbctwo/programmes/schedules/wales/today.xml"),
-        ('bbc_two_hd', "BBC Two Scotland", "http://www.bbc.co.uk/bbctwo/programmes/schedules/scotland/today.xml"),
-        ('bbc_two_hd', "BBC Two England", "http://www.bbc.co.uk/bbctwo/programmes/schedules/england/today.xml"),
-        ('bbc_two_hd', "BBC Two Northern Ireland", "http://www.bbc.co.uk/bbctwo/programmes/schedules/ni/today.xml"),
+        ('bbc_one_hd', "BBC One", "https://www.bbc.co.uk/bbcone/programmes/schedules/hd/today.xml"),
+        ('bbc_two_hd', "BBC Two", "https://www.bbc.co.uk/bbctwo/programmes/schedules/hd/today.xml"),
+        ('bbc_four_hd', "BBC Four", "https://www.bbc.co.uk/bbcfour/programmes/schedules/today.xml"),
+        ('bbc_news24', "BBC News", "https://www.bbc.co.uk/bbcnews/programmes/schedules/today.xml"),
+        ('bbc_parliament', "BBC Parliament", "https://www.bbc.co.uk/bbcparliament/programmes/schedules/today.xml"),
+        ('cbbc_hd', "CBBC", "https://www.bbc.co.uk/cbbc/programmes/schedules/today.xml"),
+        ('cbeebies_hd', "CBeebies", "https://www.bbc.co.uk/cbeebies/programmes/schedules/today.xml"),
+        ('bbc_alba', "Alba", "https://www.bbc.co.uk/bbcalba/programmes/schedules/today.xml"),
+        ('s4cpbs', "S4C", "https://www.bbc.co.uk/s4c/programmes/schedules/today.xml"),
+        ('bbc_one_hd', "BBC One Cambridgeshire", "https://www.bbc.co.uk/bbcone/programmes/schedules/cambridge/today.xml"),
+        ('bbc_one_hd', "BBC One Channel Islands", "https://www.bbc.co.uk/bbcone/programmes/schedules/channel_islands/today.xml"),
+        ('bbc_one_hd', "BBC One East", "https://www.bbc.co.uk/bbcone/programmes/schedules/east/today.xml"),
+        ('bbc_one_hd', "BBC One East Midlands", "https://www.bbc.co.uk/bbcone/programmes/schedules/east_midlands/today.xml"),
+        ('bbc_one_hd', "BBC One Yorks & Lincs", "https://www.bbc.co.uk/bbcone/programmes/schedules/east_yorkshire/today.xml"),
+        ('bbc_one_hd', "BBC One HD", "https://www.bbc.co.uk/bbcone/programmes/schedules/hd/today.xml"),
+        ('bbc_one_hd', "BBC One London", "https://www.bbc.co.uk/bbcone/programmes/schedules/london/today.xml"),
+        ('bbc_one_hd', "BBC One Northern Ireland", "https://www.bbc.co.uk/bbcone/programmes/schedules/ni/today.xml"),
+        ('bbc_one_hd', "BBC One Northern Ireland HD", "https://www.bbc.co.uk/bbcone/programmes/schedules/ni_hd/today.xml"),
+        ('bbc_one_hd', "BBC One North East & Cumbria", "https://www.bbc.co.uk/bbcone/programmes/schedules/north_east/today.xml"),
+        ('bbc_one_hd', "BBC One North West", "https://www.bbc.co.uk/bbcone/programmes/schedules/north_west/today.xml"),
+        ('bbc_one_hd', "BBC One Oxfordshire", "https://www.bbc.co.uk/bbcone/programmes/schedules/oxford/today.xml"),
+        ('bbc_one_hd', "BBC One Scotland", "https://www.bbc.co.uk/bbcone/programmes/schedules/scotland/today.xml"),
+        ('bbc_one_hd', "BBC One Scotland HD", "https://www.bbc.co.uk/bbcone/programmes/schedules/scotland_hd/today.xml"),
+        ('bbc_one_hd', "BBC One South", "https://www.bbc.co.uk/bbcone/programmes/schedules/south/today.xml"),
+        ('bbc_one_hd', "BBC One South East", "https://www.bbc.co.uk/bbcone/programmes/schedules/south_east/today.xml"),
+        ('bbc_one_hd', "BBC One South West", "https://www.bbc.co.uk/bbcone/programmes/schedules/south_west/today.xml"),
+        ('bbc_one_hd', "BBC One Wales", "https://www.bbc.co.uk/bbcone/programmes/schedules/wales/today.xml"),
+        ('bbc_one_hd', "BBC One Wales HD", "https://www.bbc.co.uk/bbcone/programmes/schedules/wales_hd/today.xml"),
+        ('bbc_one_hd', "BBC One West", "https://www.bbc.co.uk/bbcone/programmes/schedules/west/today.xml"),
+        ('bbc_one_hd', "BBC One West Midlands", "https://www.bbc.co.uk/bbcone/programmes/schedules/west_midlands/today.xml"),
+        ('bbc_one_hd', "BBC One Yorkshire", "https://www.bbc.co.uk/bbcone/programmes/schedules/yorkshire/today.xml"),
+        ('bbc_two_hd', "BBC Two Wales", "https://www.bbc.co.uk/bbctwo/programmes/schedules/wales/today.xml"),
+        ('bbc_two_hd', "BBC Two Scotland", "https://www.bbc.co.uk/bbctwo/programmes/schedules/scotland/today.xml"),
+        ('bbc_two_hd', "BBC Two England", "https://www.bbc.co.uk/bbctwo/programmes/schedules/england/today.xml"),
+        ('bbc_two_hd', "BBC Two Northern Ireland", "https://www.bbc.co.uk/bbctwo/programmes/schedules/ni/today.xml"),
     ]
     items = []
     for id, name, url in channels:
@@ -541,9 +542,9 @@ def cache_all(url):
         episodes_url = ''
         for u in urls:
             if u.startswith('/iplayer/episode/'):
-                episode_url = 'http://www.bbc.co.uk%s' % u
+                episode_url = 'https://www.bbc.co.uk%s' % u
             elif u.startswith('/iplayer/episodes/'):
-                episodes_url = 'http://www.bbc.co.uk%s' % u
+                episodes_url = 'https://www.bbc.co.uk%s' % u
 
         if episode_url:
             title = episode_url.split('/')[-1]
@@ -555,7 +556,7 @@ def cache_all(url):
 
     next_page = re.compile('<span class="next.*?href="(.*?)"',flags=(re.DOTALL | re.MULTILINE)).search (html)
     if next_page:
-        url = 'http://www.bbc.co.uk%s' % unescape(next_page.group(1))
+        url = 'https://www.bbc.co.uk%s' % unescape(next_page.group(1))
         if 'page=' in url:
             cache_all(url)
 
@@ -796,13 +797,13 @@ def char_range(c1, c2):
 
 @plugin.route('/letter/<letter>')
 def letter(letter):
-    url = 'http://www.bbc.co.uk/iplayer/a-z/%s' % letter
+    url = 'https://www.bbc.co.uk/iplayer/a-z/%s' % letter
     html = get(url)
 
     items = []
     match=re.compile('<a href="/iplayer/brand/(.+?)".+?<span class="title">(.+?)</span>',re.DOTALL).findall (html)
     for url , name in match:
-        url = "http://www.bbc.co.uk/iplayer/episodes/%s" % url
+        url = "https://www.bbc.co.uk/iplayer/episodes/%s" % url
         thumbnail = get_icon_path('lists')
         context_items = []
         context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'Add Favourite', 'XBMC.RunPlugin(%s)' %
@@ -835,7 +836,7 @@ def channel_a_z():
     items = []
     for id, img, name in channel_list:
         icon = 'special://home/addons/plugin.video.bbc/resources/img/%s.png' % img
-        url = "http://www.bbc.co.uk/%s/a-z" % id
+        url = "https://www.bbc.co.uk/%s/a-z" % id
         items.append({
             'label' : name,
             'thumbnail' : icon,
@@ -869,7 +870,7 @@ def page2(url):
     #return
     for url in episodes:
         if not url.startswith('http'):
-            url = "http://www.bbc.co.uk"+url
+            url = "https://www.bbc.co.uk"+url
        #log(url)
         name = url.rsplit('/',1)[-1]
         name = name.replace('-',' ').title()
@@ -892,7 +893,7 @@ def page2(url):
         })    
     for url in episode:
         if not url.startswith('http'):
-            url = "http://www.bbc.co.uk"+url
+            url = "https://www.bbc.co.uk"+url
        #log(url)
         name = url.rsplit('/',1)[-1]
         name = name.replace('-',' ').title()
@@ -920,11 +921,12 @@ def page2(url):
     
 @plugin.route('/page/<url>')
 def page(url):
+    #log(url)
     global big_list_view
     big_list_view = True
     headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
     html = get(url)
-
+    #log(html)
     items = []
     html_items=html.split('data-ip-id="')
     for p in html_items:
@@ -935,12 +937,12 @@ def page(url):
         episodes_url = ''
         for u in urls:
             if u.startswith('/iplayer/episode/'):
-                episode_url = 'http://www.bbc.co.uk%s' % u
+                episode_url = 'https://www.bbc.co.uk%s' % u
             elif u.startswith('/iplayer/episodes/'):
-                episodes_url = 'http://www.bbc.co.uk%s' % u
-            elif u.startswith('http://www.bbc.co.uk/iplayer/episode/'):
+                episodes_url = 'https://www.bbc.co.uk%s' % u
+            elif u.startswith('https://www.bbc.co.uk/iplayer/episode/'):
                 episode_url = u
-            elif u.startswith('http://www.bbc.co.uk/iplayer/episodes/'):
+            elif u.startswith('https://www.bbc.co.uk/iplayer/episodes/'):
                 episodes_url = u
 
         name = re.compile('title="(.+?)"').findall (p)[0]
@@ -1045,7 +1047,7 @@ def page(url):
 
     next_page = re.compile('<span class="next.*?href="(.*?)"',flags=(re.DOTALL | re.MULTILINE)).search (html)
     if next_page:
-        url = 'http://www.bbc.co.uk%s' % unescape(next_page.group(1))
+        url = 'https://www.bbc.co.uk%s' % next_page.group(1)
         if 'page=' in url:
             if plugin.get_setting('page') == 'true' and "search" not in url:
                 number = url.split('page=')[-1]
@@ -1108,7 +1110,7 @@ def search(what):
     if not what:
         return
 
-    url= 'http://www.bbc.co.uk/iplayer/search?q=%s' % what.replace(' ','%20')
+    url= 'https://www.bbc.co.uk/iplayer/search?q=%s' % what.replace(' ','%20')
     return page(url)
 
 @plugin.route('/searches')
@@ -1215,7 +1217,7 @@ def pvr_list():
 
 @plugin.route('/categories')
 def categories():
-    url = 'http://www.bbc.co.uk/iplayer'
+    url = 'https://www.bbc.co.uk/iplayer'
     headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
     html = get(url)
     match = re.compile(
@@ -1233,7 +1235,7 @@ def categories():
         if url.startswith('http'):
             url = '%s/all?sort=%s' % (url,order)
         else:
-            url = 'http://www.bbc.co.uk%s/all?sort=%s' % (url,order)
+            url = 'https://www.bbc.co.uk%s/all?sort=%s' % (url,order)
 
         items.append({
             'label': "%s" % unescape(name),
@@ -1244,7 +1246,7 @@ def categories():
 
 @plugin.route('/highlights/<url>')
 def highlights(url):
-    #url = 'http://www.bbc.co.uk/iplayer'
+    #url = 'https://www.bbc.co.uk/iplayer'
     headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
     html = get(url)
     match = re.compile(
@@ -1292,7 +1294,7 @@ def channel_highlights():
         iconimage = get_icon_path(img)
         items.append({
             'label': name,
-            'path': plugin.url_for('highlights',url='http://www.bbc.co.uk/' + id),
+            'path': plugin.url_for('highlights',url='https://www.bbc.co.uk/' + id),
             'thumbnail':iconimage,
         })
     return items
