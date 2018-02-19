@@ -845,7 +845,7 @@ def channel_a_z():
     return items
 
 
-@plugin.route('/page/<url>')
+@plugin.route('/page2/<url>')
 def page2(url):
     global big_list_view
     big_list_view = True
@@ -918,7 +918,7 @@ def page2(url):
     #return plugin.finish(items, sort_methods=['playlist_order','label','date'])
     return items
     
-@plugin.route('/page1/<url>')
+@plugin.route('/page/<url>')
 def page(url):
     global big_list_view
     big_list_view = True
