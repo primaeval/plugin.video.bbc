@@ -1349,7 +1349,7 @@ def index():
     context_items = []
     context_items.append(("[COLOR yellow][B]%s[/B][/COLOR] " % 'PVR Service', 'XBMC.RunPlugin(%s)' %
     (plugin.url_for('start_pvr_service'))))
-    xbmc_version = float(xbmc.getInfoLabel( "System.BuildVersion" ).split()[0])
+    xbmc_version = float(xbmc.getInfoLabel( "System.BuildVersion" ).split()[0].split('-')[0])
 
     items = [
     {
