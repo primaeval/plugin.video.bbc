@@ -926,7 +926,6 @@ def page(url):
     big_list_view = True
     headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
     html = get(url)
-    #log(html)
     items = []
     html_items=html.split('data-ip-id="')
     for p in html_items:
@@ -1220,8 +1219,9 @@ def categories():
     url = 'https://www.bbc.co.uk/iplayer'
     headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:50.0) Gecko/20100101 Firefox/50.0'}
     html = get(url)
+
     match = re.compile(
-        '<a href="(.*?/iplayer/categories/.+?)".*?>(.+?)</a>'
+        '<a href="(.*?/iplayer/categories/.+?)/.*?".*?>(.+?)</a>'
         ).findall(html)
 
     items = []
@@ -1235,7 +1235,7 @@ def categories():
         if url.startswith('http'):
             url = '%s/all?sort=%s' % (url,order)
         else:
-            url = 'https://www.bbc.co.uk%s/all?sort=%s' % (url,order)
+            url = 'https://www.bbc.co.uk%s/a-z?sort=%s' % (url,order)
 
         items.append({
             'label': "%s" % unescape(name),
